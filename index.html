@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Pointage">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-DIfaGqNeCqQM2oUrLep3f6Nrnkzr8wJJArM1t4gqjJU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Mj/MKuE7NR4OWhklG7JAEHXKR0uIkUwZ22mdzIy93Zc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#16181c" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -211,6 +211,7 @@ body.ov{overflow:hidden}
       <div id="su-s"></div>
     </div>
     <div class="note" style="margin:10px 0 0">Montants horaires en euros, tels qu'ils figurent sur ta fiche de paie. Chacun entre les siens : ils ne sont pas partagés avec les autres utilisateurs.</div>
+    <div class="note" id="su-def" style="margin:8px 0 0"></div>
   </div>
   <div class="note neg" id="su-err" style="font-size:15px"></div>
   <div class="actions"><button class="btn" id="su-go">Commencer</button></div>
@@ -343,6 +344,7 @@ body.ov{overflow:hidden}
 <section class="view" id="v-astr">
   <h1>Astreinte</h1>
   <div class="sub cap" id="a-label"></div>
+  <div class="defrates"></div>
   <div class="card status">
     <div class="big num" id="a-big">—</div>
     <div class="lbl" id="a-lbl"></div>
@@ -376,6 +378,7 @@ body.ov{overflow:hidden}
   <button class="linkbtn" id="d-back" style="margin:-6px 0 2px -4px">‹ Astreintes de nuit</button>
   <h1>Dimanche</h1>
   <div class="sub" id="d-label"></div>
+  <div class="defrates"></div>
   <div class="card status">
     <div class="big num" id="d-big">—</div>
     <div class="lbl" id="d-lbl"></div>
@@ -405,6 +408,7 @@ body.ov{overflow:hidden}
 <!-- ============ HISTORIQUE DES ASTREINTES ============ -->
 <section class="view" id="v-astrhist">
   <h1>Historique des astreintes</h1>
+  <div class="defrates"></div>
   <div class="nav">
     <button id="am-prev" aria-label="Mois précédent">‹</button>
     <div class="mid"><div class="title" id="am-title"></div></div>
@@ -1249,7 +1253,7 @@ function renderSet(){
     const rr = Object.assign({}, settings.rates, { [k]: v });
     const ok = isT ? (rr.s >= 12 && rr.e < 12 && rr.ss < rr.se) : (v >= 0 && v <= 1000);
     if (!ok){ toast(isT ? 'Heure invalide (nuit : début le soir, fin le matin)' : 'Valeur invalide'); return renderSet(); }
-    settings.rates[k] = v; saveSettings(); toast('Tarif enregistré ✓');
+    settings.rates[k] = v; if (RATE_DEFAULT[k] !== undefined) settings.ratesDefault = false; saveSettings(); toast('Tarif enregistré ✓');
   });
   $('s-last').textContent = settings.lastExport ? `Dernière sauvegarde : ${new Date(settings.lastExport).toLocaleDateString('fr-FR')}` : 'Aucune sauvegarde faite pour le moment.';
   $('s-about').textContent = `${Object.keys(data).length} journée(s), ${Object.keys(astr).length} nuit(s) d'astreinte et ${Object.keys(dim).length} dimanche(s) enregistrés sur ce téléphone.`;
@@ -1458,6 +1462,8 @@ $('x-astr').onclick = () => {
 
 /* ---------- Premier lancement : réglages personnels ---------- */
 const RATE_ASK = [['h', 'n'], ['c1', 'n'], ['c2', 'n'], ['sh', 's'], ['sc', 's']];
+const RATE_DEFAULT = { h: 1, c1: 10, c2: 15, sh: 2, sc: 16 };   // tarifs appliqués si la case est laissée vide
+const defList = () => RATE_ASK.map(([k, g]) => `${g === 'n' ? 'Nuit' : 'Dimanche'} – ${rateLabel(k).replace(' (€/h)', '').replace(' (en plus)', '')} : ${nb(RATE_DEFAULT[k])} €/h`).join(' · ');
 function rateLabel(k){
   const r = R();
   return { h: 'À domicile', c1: `CHU ${hh(r.s)}–${hh(r.m)}`, c2: `CHU ${hh(r.m)}–${hh(r.e)}`, sh: 'Astreinte', sc: "À l'hôpital (en plus)" }[k] + ' (€/h)';
@@ -1469,10 +1475,11 @@ function openSetup(){
   $('su-sun').textContent = `Astreinte du dimanche (${hh(r.ss)} → ${hh(r.se)})`;
   ['n', 's'].forEach(g => {
     $('su-' + g).innerHTML = RATE_ASK.filter(x => x[1] === g).map(([k]) =>
-      `<div class="field"><label for="su-r-${k}">${rateLabel(k)}</label><input type="text" inputmode="decimal" id="su-r-${k}" placeholder="ex. 12,50"></div>`).join('');
+      `<div class="field"><label for="su-r-${k}">${rateLabel(k)}</label><input type="text" inputmode="decimal" id="su-r-${k}" placeholder="par défaut ${nb(RATE_DEFAULT[k])} €"></div>`).join('');
   });
   $('su-login-row').style.display = syncOn() && !auth ? '' : 'none';
   $('su-err').textContent = '';
+  $('su-def').innerHTML = `<b>Tu ne connais pas tes tarifs ?</b> Laisse les cases vides : le tarif par défaut indiqué dans chaque case sera appliqué. Tu pourras les modifier plus tard dans Menu → Paramètres pour une estimation précise.`;
   $('setup').classList.add('on'); document.body.classList.add('ov');
 }
 function closeSetup(){ $('setup').classList.remove('on'); if (!$('acct').classList.contains('on')) document.body.classList.remove('ov'); render(); }
@@ -1486,14 +1493,19 @@ $('su-go').onclick = () => {
   if (!(std > 0 && std <= 24)) return err('Indique le nombre d’heures d’une journée normale (ex. 10).');
   const rates = {};
   if ($('su-none').checked) RATE_ASK.forEach(([k]) => rates[k] = 0);
-  else for (const [k] of RATE_ASK){
-    const v = parseFloat(($('su-r-' + k).value || '').replace(',', '.').replace('€', '').trim());
-    if (!(v > 0 && v < 1000)) return err(`Indique le tarif « ${rateLabel(k)} », ou coche « Je ne fais pas d'astreintes ».`);
+  let usedDef = false;
+  if (!$('su-none').checked) for (const [k] of RATE_ASK){
+    const raw = ($('su-r-' + k).value || '').replace(',', '.').replace('€', '').trim();
+    if (!raw){ rates[k] = RATE_DEFAULT[k]; usedDef = true; continue; }
+    const v = parseFloat(raw);
+    if (!(v > 0 && v < 1000)) return err(`Le tarif « ${rateLabel(k)} » n'est pas valide. Écris un nombre (ex. 12,50) ou laisse la case vide pour le tarif par défaut.`);
     rates[k] = v;
   }
   settings.name = $('su-name').value.trim(); settings.mail = mail; settings.mailOn = !!mail; settings.std = std;
-  Object.assign(settings.rates, rates); settings.setupDone = true; saveSettings();
-  closeSetup(); toast("C'est prêt ✓");
+  Object.assign(settings.rates, rates); settings.setupDone = true; settings.ratesDefault = usedDef; saveSettings();
+  closeSetup();
+  if (usedDef) alert(`Tarifs par défaut appliqués :\n\n${defList().split(' · ').join('\n')}\n\nPour avoir une estimation précise de tes astreintes, modifie ces tarifs dans Menu → Paramètres → Astreintes.`);
+  else toast("C'est prêt ✓");
 };
 
 /* ---------- Sauvegarde en ligne (Firebase : compte e-mail + mot de passe) ----------
@@ -1512,7 +1524,7 @@ function markDirty(){
   clearTimeout(pushT); pushT = setTimeout(syncNow, 1500);
 }
 const hasLocal = () => !!(Object.keys(data).length || Object.keys(astr).length || Object.keys(dim).length);
-const SYNC_SET = ['std', 'name', 'mail', 'mailOn', 'rates', 'ratesV', 'setupDone'];
+const SYNC_SET = ['std', 'name', 'mail', 'mailOn', 'rates', 'ratesV', 'setupDone', 'ratesDefault'];
 function snapshot(){ const s = {}; SYNC_SET.forEach(k => s[k] = settings[k]); return { v: 1, data, astr, dim, settings: s }; }
 function applyRemote(p, merge){
   applying = true;
@@ -1683,6 +1695,8 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && au
 /* ---------- Démarrage ---------- */
 function render(){
   const v = document.querySelector('.view.on').id;
+  document.querySelectorAll('.defrates').forEach(el => el.innerHTML = settings.ratesDefault
+    ? `<div class="banner" style="margin-top:12px"><b>Tarifs par défaut</b><span class="sub">Les montants sont estimés avec des tarifs par défaut. Pour une estimation précise, indique tes vrais tarifs dans Menu → Paramètres → Astreintes.</span></div>` : '');
   if (v === 'v-home') renderHome(); else if (v === 'v-hist') renderHist(); else if (v === 'v-stats') renderStats();
   else if (v === 'v-astr') renderAstr(); else if (v === 'v-astrhist') renderAstrHist();
   else if (v === 'v-wstat') renderWStat(); else if (v === 'v-dim') renderDim(); else renderSet();
