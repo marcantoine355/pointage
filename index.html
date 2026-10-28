@@ -1,0 +1,1698 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Pointage">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-DIfaGqNeCqQM2oUrLep3f6Nrnkzr8wJJArM1t4gqjJU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com; base-uri 'none'; form-action 'none'">
+<meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16181c" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<title>Pointage</title>
+<style>
+:root{
+  --bg:#f4f1ea; --card:#fffdf8; --ink:#1f2328; --muted:#6b6f76; --line:#e4dfd3;
+  --in:#2f7d5b; --in-soft:#dcefe5; --out:#c2562e; --out-soft:#f7e1d6;
+  --night:#3b4f8f; --night-soft:#e1e6f5; --sun:#a8641a;
+  --accent:#2c4a7a; --warn:#b23a3a;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#16181c; --card:#20232a; --ink:#eceae4; --muted:#9a9ea6; --line:#30343c;
+    --in:#4fb487; --in-soft:#1f3a2e; --out:#e07a50; --out-soft:#3d2a22;
+    --night:#8c9fe0; --night-soft:#262c40; --sun:#c98a3a;
+    --accent:#8fb0e6; --warn:#e27070;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--ink)}
+body{font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 92px);
+  min-height:100vh;-webkit-user-select:none;user-select:none}
+input,button,select{font:inherit;color:inherit}
+.num{font-variant-numeric:tabular-nums}
+h1{font-size:28px;font-weight:700;letter-spacing:-.02em;padding-right:64px}
+.brand{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:16px;height:52px;width:auto;background:#fff;border-radius:10px;padding:3px;box-shadow:0 0 0 1px var(--line);z-index:4}
+@media (min-width:600px){.brand{right:calc(50% - 280px)}}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin:22px 4px 8px}
+.sub{color:var(--muted);font-size:15px}
+.cap::first-letter{text-transform:uppercase}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+.view{display:none;max-width:560px;margin:0 auto}
+.view.on{display:block}
+
+/* Gros boutons */
+.status{margin-top:18px;text-align:center;padding:22px 16px}
+.status .big{font-size:48px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
+.status .lbl{color:var(--muted);font-size:15px;margin-top:4px}
+.btns{display:grid;gap:12px;margin-top:16px}
+.bigbtn{border:0;border-radius:20px;padding:24px 16px;font-size:21px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;transition:transform .08s;text-align:center}
+.bigbtn:active{transform:scale(.97)}
+.bigbtn small{display:block;font-size:14px;font-weight:500;opacity:.85}
+.bigbtn.in{background:var(--in);color:#fff}
+.bigbtn.out{background:var(--out);color:#fff}
+.bigbtn.night{background:var(--night);color:#fff}
+.bigbtn.sun{background:var(--sun);color:#fff}
+.bigbtn.dim{opacity:.45}
+.bigbtn.plain{background:var(--card);color:var(--ink);border:1px solid var(--line);font-size:18px}
+.bigbtn.plain small{color:var(--muted)}
+.tablecard{padding:2px 10px}
+.atable{width:100%;border-collapse:collapse;font-size:14px}
+.atable th{color:var(--muted);font-weight:600;font-size:12px;line-height:1.25;text-align:right;padding:10px 3px;border-bottom:1px solid var(--line);vertical-align:bottom}
+.atable th:first-child,.atable td:first-child{text-align:left}
+.atable td{padding:11px 3px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;vertical-align:top}
+.atable td:last-child{font-weight:600;white-space:nowrap}
+.atable.hours tbody td:last-child{font-weight:400}
+.atable tbody tr{cursor:pointer}
+.atable tbody tr.sel td{background:var(--night-soft)}
+.atable tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--line)}
+.atable tfoot tr.eur td{border-top:1px solid var(--line);font-weight:600}
+.atable tfoot tr.grand td{border-top:1px solid var(--line);font-size:15px}
+.atable tfoot tr.grand td:first-child{text-align:left}
+.atable td small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .k{color:var(--muted)}
+.row .v{font-weight:600;text-align:right}
+.row.total .k{color:var(--ink);font-weight:700}
+.row.total .v{font-size:19px}
+.pos{color:var(--in)} .neg{color:var(--warn)}
+
+/* Bandeau e-mail */
+.banner{margin-top:16px;background:var(--night-soft);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.banner b{display:block;margin-bottom:2px}
+.banner .actions{margin-top:10px}
+
+/* Formulaires */
+.field{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.field:last-of-type{border-bottom:0}
+.field label{color:var(--muted)}
+.field input{background:transparent;border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:130px;max-width:60%;text-align:right;font-weight:600;-webkit-user-select:text;user-select:text}
+.field input[type=checkbox]{min-width:0;width:24px;height:24px;accent-color:var(--accent)}
+.field input[type=time]::-webkit-date-and-time-value{text-align:right}
+.actions{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;border:0;border-radius:14px;padding:13px;font-weight:600;cursor:pointer;background:var(--accent);color:var(--card)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.danger{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+.linkbtn{border:0;background:transparent;color:var(--accent);font-weight:600;padding:10px 4px;cursor:pointer}
+.list .item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+.list .item:last-child{border-bottom:0}
+.item .d::first-letter{text-transform:uppercase}
+.item .t{color:var(--muted);font-size:14px}
+.item .h{font-weight:600;text-align:right;white-space:nowrap}
+.item .s{font-size:13px;text-align:right;white-space:nowrap}
+.empty{color:var(--muted);text-align:center;padding:18px 0}
+
+/* Passages à l'hôpital (édition) */
+.pass{border:1px solid var(--line);border-radius:14px;padding:4px 12px;margin-top:10px}
+.pass-head{display:flex;justify-content:space-between;align-items:center;padding-top:6px}
+.pass-head b{font-size:14px}
+.pass-head button{border:0;background:transparent;color:var(--warn);font-weight:600;padding:6px;cursor:pointer}
+.pass .field input{min-width:110px}
+
+/* Frise de la nuit */
+.timeline{list-style:none}
+.timeline li{display:flex;gap:12px;padding:7px 0}
+.timeline .tm{font-weight:600;min-width:48px}
+.timeline .tx{color:var(--muted)}
+
+/* Bilan */
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--line);border-radius:12px;padding:3px;margin-top:16px}
+.seg button{border:0;background:transparent;padding:9px;border-radius:9px;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px}
+.nav button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-size:20px;cursor:pointer;flex:none}
+.nav .mid{flex:1;text-align:center}
+.nav .mid .title{font-weight:700;font-size:18px}
+.nav .mid .range{color:var(--muted);font-size:13px}
+.picker{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.picker input{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:96px;text-align:center;-webkit-user-select:text;user-select:text}
+.picker input[type=month]{width:auto}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.kpi .k{color:var(--muted);font-size:13px}
+.kpi .v{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+.kpi.wide{grid-column:1/-1}
+.ytd{margin-top:14px;font-size:16px;line-height:1.45}
+.ytd b{font-size:20px;display:block;margin-top:2px}
+.note{color:var(--muted);font-size:13px;margin:10px 4px 0}
+
+/* Barre du bas + menu */
+.tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(3,1fr);padding:6px 4px calc(env(safe-area-inset-bottom) + 6px);z-index:6}
+.tabbar button{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:11px;color:var(--muted);padding:6px 0;cursor:pointer}
+.tabbar button svg,.menu-item svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabbar button.on{color:var(--accent)}
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s;z-index:7}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-radius:22px 22px 0 0;z-index:8;
+  padding:10px 16px calc(env(safe-area-inset-bottom) + 16px);transform:translateY(105%);transition:transform .25s ease;max-width:560px;margin:0 auto}
+.menu-open .backdrop{opacity:1;pointer-events:auto}
+.menu-open .sheet{transform:translateY(0)}
+.grip{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
+.sheet h3{font-size:20px;margin:0 4px 6px}
+.menu-item{display:flex;align-items:center;gap:14px;width:100%;border:0;background:transparent;padding:14px 4px;border-bottom:1px solid var(--line);text-align:left;cursor:pointer}
+.menu-item:last-child{border-bottom:0}
+.menu-item .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--bg);color:var(--accent);flex:none}
+.menu-item b{display:block;font-size:17px}
+.menu-item span{color:var(--muted);font-size:14px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:15px;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center;z-index:10}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.overlay{position:fixed;inset:0;background:var(--bg);z-index:40;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 28px)}
+.overlay.on{display:block}
+#acct{z-index:45}
+.ov-in{max-width:560px;margin:0 auto}
+.ov-logo{display:block;height:56px;background:#fff;border-radius:12px;padding:4px;margin:4px 0 14px}
+body.ov{overflow:hidden}
+.grp{font-weight:600;font-size:15px;margin:4px 0 2px}
+.field input:disabled{opacity:.5}
+.field select{background:transparent;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-weight:600}
+</style>
+</head>
+<body>
+<img class="brand" src="logo.png" alt="CHU Angers">
+
+<!-- ============ PREMIER LANCEMENT ============ -->
+<div class="overlay" id="setup" role="dialog" aria-modal="true" aria-labelledby="su-title">
+ <div class="ov-in">
+  <img class="ov-logo" src="logo.png" alt="">
+  <h1 id="su-title">Bienvenue</h1>
+  <div class="sub">Quelques réglages avant de commencer. Tout reste modifiable ensuite dans Menu → Paramètres.</div>
+  <div class="card" id="su-restore" style="margin-top:16px">
+    <b>Tu as déjà des données ?</b>
+    <div class="note" style="margin:4px 0 0">Récupère tes horaires, astreintes et tarifs depuis ton compte de sauvegarde ou depuis un fichier de sauvegarde.</div>
+    <div class="actions" id="su-login-row"><button class="btn ghost" id="su-login">Me connecter à mon compte</button></div>
+    <div class="actions"><button class="btn ghost" id="su-file">Restaurer un fichier de sauvegarde</button></div>
+  </div>
+  <h2>Toi</h2>
+  <div class="card">
+    <div class="field"><label for="su-name">Prénom</label><input type="text" id="su-name" autocomplete="given-name"></div>
+    <div class="field"><label for="su-mail">E-mail pour le bilan mensuel</label><input type="email" id="su-mail" autocomplete="email" placeholder="facultatif"></div>
+    <div class="field"><label for="su-std">Heures d'une journée normale</label><input type="text" inputmode="decimal" id="su-std"></div>
+  </div>
+  <h2>Tes tarifs d'astreinte</h2>
+  <div class="card">
+    <div class="field"><label for="su-none">Je ne fais pas d'astreintes</label><input type="checkbox" id="su-none"></div>
+    <div id="su-rates">
+      <div class="grp" id="su-night" style="margin-top:12px"></div>
+      <div id="su-n"></div>
+      <div class="grp" id="su-sun" style="margin-top:14px"></div>
+      <div id="su-s"></div>
+    </div>
+    <div class="note" style="margin:10px 0 0">Montants horaires en euros, tels qu'ils figurent sur ta fiche de paie. Chacun entre les siens : ils ne sont pas partagés avec les autres utilisateurs.</div>
+  </div>
+  <div class="note neg" id="su-err" style="font-size:15px"></div>
+  <div class="actions"><button class="btn" id="su-go">Commencer</button></div>
+ </div>
+</div>
+
+<!-- ============ COMPTE DE SAUVEGARDE ============ -->
+<div class="overlay" id="acct" role="dialog" aria-modal="true" aria-labelledby="ac-title">
+ <div class="ov-in">
+  <button class="linkbtn" id="ac-close" style="margin-left:-4px">‹ Retour</button>
+  <h1 id="ac-title"></h1>
+  <div class="sub" id="ac-sub"></div>
+  <div class="card" style="margin-top:16px">
+    <div class="field"><label for="ac-mail">E-mail</label><input type="email" id="ac-mail" autocomplete="username" autocapitalize="off"></div>
+    <div class="field" id="ac-pw-row"><label for="ac-pw">Mot de passe</label><input type="password" id="ac-pw"></div>
+    <div class="field" id="ac-pw2-row"><label for="ac-pw2">Confirmer</label><input type="password" id="ac-pw2" autocomplete="new-password"></div>
+  </div>
+  <div class="note" id="ac-hint">8 caractères minimum. Utilise un mot de passe que tu n'utilises pas ailleurs.</div>
+  <div class="note neg" id="ac-err" style="font-size:15px"></div>
+  <div class="actions"><button class="btn" id="ac-go"></button></div>
+  <button class="linkbtn" id="ac-switch" style="display:block;margin-top:8px"></button>
+  <button class="linkbtn" id="ac-forgot" style="display:block">Mot de passe oublié ?</button>
+ </div>
+</div>
+
+<!-- ============ POINTER ============ -->
+<section class="view on" id="v-home">
+  <h1>Pointage</h1>
+  <div class="sub cap" id="today-label"></div>
+  <div id="mail-banner"></div>
+  <div class="card status">
+    <div class="big num" id="live">—</div>
+    <div class="lbl" id="live-lbl">Pas encore pointé aujourd'hui</div>
+  </div>
+  <div class="btns">
+    <button class="bigbtn in" id="b-in">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
+      <span>Je suis arrivé<small id="in-hint">Pointer l'arrivée</small></span>
+    </button>
+    <button class="bigbtn out" id="b-out">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      <span>Je pars du travail<small id="out-hint">Pointer le départ</small></span>
+    </button>
+  </div>
+  <h2>Aujourd'hui</h2>
+  <div class="card" id="today-card"></div>
+  <h2>Cette semaine</h2>
+  <div class="card" id="week-card"></div>
+</section>
+
+<!-- ============ HISTORIQUE ============ -->
+<section class="view" id="v-hist">
+  <h1>Historique</h1>
+  <div class="sub">Consulter ou corriger une journée</div>
+  <h2>Choisir une date</h2>
+  <div class="card">
+    <div class="field"><label for="e-date">Date</label><input type="date" id="e-date"></div>
+    <div class="field"><label for="e-a">Arrivée</label><input type="time" id="e-a"></div>
+    <div class="field"><label for="e-d">Départ</label><input type="time" id="e-d"></div>
+    <div class="field"><label>Durée</label><span class="num" id="e-dur" style="font-weight:600">—</span></div>
+    <div class="actions">
+      <button class="btn" id="e-save">Enregistrer</button>
+      <button class="btn danger" id="e-del">Effacer</button>
+    </div>
+  </div>
+  <h2>Derniers jours pointés</h2>
+  <div class="card list" id="recent"></div>
+  <div class="actions"><button class="btn ghost" id="x-days">Exporter en Excel</button></div>
+  <div class="note">Toutes les journées, plus le récap par semaine et par mois. Choisis « Enregistrer dans Fichiers » puis Google Drive pour le retrouver dans le Drive.</div>
+</section>
+
+<!-- ============ BILAN ============ -->
+<section class="view" id="v-stats">
+  <h1>Bilan</h1>
+  <div class="seg"><button class="on" data-mode="week">Semaine</button><button data-mode="month">Mois</button></div>
+
+  <div id="week-box">
+    <div class="nav">
+      <button id="w-prev" aria-label="Semaine précédente">‹</button>
+      <div class="mid"><div class="title" id="w-title"></div><div class="range" id="w-range"></div></div>
+      <button id="w-next" aria-label="Semaine suivante">›</button>
+    </div>
+    <div class="picker">
+      <input type="number" inputmode="numeric" id="w-num" min="1" max="53" aria-label="Numéro de semaine" placeholder="Semaine">
+      <input type="number" inputmode="numeric" id="w-year" min="2000" max="2100" aria-label="Année" placeholder="Année">
+    </div>
+  </div>
+
+  <div id="month-box" style="display:none">
+    <div class="nav">
+      <button id="m-prev" aria-label="Mois précédent">‹</button>
+      <div class="mid"><div class="title" id="m-title"></div><div class="range">Toucher le mois pour en choisir un autre</div></div>
+      <button id="m-next" aria-label="Mois suivant">›</button>
+    </div>
+    <div class="picker"><input type="month" id="m-pick" aria-label="Choisir un mois"></div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="k">Heures travaillées</div><div class="v num" id="k-total">—</div></div>
+    <div class="kpi"><div class="k">Jours travaillés</div><div class="v num" id="k-days">—</div></div>
+    <div class="kpi wide"><div class="k" id="k-sup-lbl">Heures supplémentaires</div><div class="v num" id="k-sup">—</div></div>
+  </div>
+  <div class="note" id="k-note"></div>
+  <div class="actions" id="m-mail-box" style="display:none"><button class="btn" id="m-mail">Envoyer ce bilan par e-mail</button></div>
+  <h2>Détail</h2>
+  <div class="card list" id="stats-list"></div>
+</section>
+
+<!-- ============ STATISTIQUE TEMPS DE TRAVAIL ============ -->
+<section class="view" id="v-wstat">
+  <h1>Statistique temps de travail</h1>
+  <div class="nav">
+    <button id="ws-prev" aria-label="Année précédente">‹</button>
+    <div class="mid"><div class="title" id="ws-title"></div><div class="range" id="ws-base"></div></div>
+    <button id="ws-next" aria-label="Année suivante">›</button>
+  </div>
+  <div class="seg" style="margin-top:12px"><button class="on" data-ws="week">Par semaine</button><button data-ws="month">Par mois</button></div>
+  <div class="card tablecard" style="margin-top:14px">
+    <table class="atable">
+      <thead><tr><th id="ws-col1">Semaine</th><th>Jours</th><th>Temps de travail</th><th>Minutes sup</th></tr></thead>
+      <tbody id="ws-body"></tbody>
+      <tfoot id="ws-foot"></tfoot>
+    </table>
+  </div>
+  <div class="card ytd" id="ws-ytd"></div>
+  <div class="note" id="ws-note"></div>
+</section>
+
+<!-- ============ ASTREINTE ============ -->
+<section class="view" id="v-astr">
+  <h1>Astreinte</h1>
+  <div class="sub cap" id="a-label"></div>
+  <div class="card status">
+    <div class="big num" id="a-big">—</div>
+    <div class="lbl" id="a-lbl"></div>
+  </div>
+  <div class="btns">
+    <button class="bigbtn night" id="ab-start"><span>Début de l'astreinte<small id="ab-start-h"></small></span></button>
+    <button class="bigbtn in" id="ab-arrive"><span>Je viens d'arriver au CHU<small id="ab-arrive-h"></small></span></button>
+    <button class="bigbtn out" id="ab-leave"><span>Je quitte le CHU<small id="ab-leave-h"></small></span></button>
+    <button class="bigbtn plain" id="ab-manual"><span>Je rentre une astreinte manuellement<small>Saisir les heures d'une nuit</small></span></button>
+    <button class="bigbtn sun" id="ab-sun"><span>Dimanche<small id="ab-sun-h"></small></span></button>
+  </div>
+  <div id="man-box" style="display:none">
+    <h2>Saisie manuelle</h2>
+    <div class="card">
+      <div class="field"><label for="man-date">Nuit du</label><input type="date" id="man-date"></div>
+      <div class="note" id="man-range" style="margin:4px 0 6px"></div>
+      <div id="man-fields"></div>
+      <div class="row total"><span class="k">Montant estimatif</span><span class="v num" id="man-eur">—</span></div>
+      <div class="note" id="man-note" style="margin:4px 0 0"></div>
+      <div class="actions">
+        <button class="btn" id="man-ok">Valider</button>
+        <button class="btn ghost" id="man-cancel">Annuler</button>
+      </div>
+    </div>
+  </div>
+  <div id="a-detail"></div>
+</section>
+
+<!-- ============ DIMANCHE ============ -->
+<section class="view" id="v-dim">
+  <button class="linkbtn" id="d-back" style="margin:-6px 0 2px -4px">‹ Astreintes de nuit</button>
+  <h1>Dimanche</h1>
+  <div class="sub" id="d-label"></div>
+  <div class="card status">
+    <div class="big num" id="d-big">—</div>
+    <div class="lbl" id="d-lbl"></div>
+  </div>
+  <div class="btns">
+    <button class="bigbtn sun" id="db-start"><span>Début de l'astreinte du dimanche<small id="db-start-h"></small></span></button>
+    <button class="bigbtn in" id="db-arrive"><span>J'arrive à l'hôpital<small id="db-arrive-h"></small></span></button>
+    <button class="bigbtn out" id="db-leave"><span>Je pars de l'hôpital<small id="db-leave-h"></small></span></button>
+    <button class="bigbtn plain" id="db-manual"><span>Je rentre un dimanche manuellement<small>Saisir les heures d'un dimanche</small></span></button>
+  </div>
+  <div id="dman-box" style="display:none">
+    <h2>Saisie manuelle</h2>
+    <div class="card">
+      <div class="field"><label for="dman-date">Date</label><input type="date" id="dman-date"></div>
+      <div id="dman-fields"></div>
+      <div class="row total"><span class="k">Montant estimatif</span><span class="v num" id="dman-eur">—</span></div>
+      <div class="note" id="dman-note" style="margin:4px 0 0"></div>
+      <div class="actions">
+        <button class="btn" id="dman-ok">Valider</button>
+        <button class="btn ghost" id="dman-cancel">Annuler</button>
+      </div>
+    </div>
+  </div>
+  <div id="d-detail"></div>
+</section>
+
+<!-- ============ HISTORIQUE DES ASTREINTES ============ -->
+<section class="view" id="v-astrhist">
+  <h1>Historique des astreintes</h1>
+  <div class="nav">
+    <button id="am-prev" aria-label="Mois précédent">‹</button>
+    <div class="mid"><div class="title" id="am-title"></div></div>
+    <button id="am-next" aria-label="Mois suivant">›</button>
+  </div>
+  <h2>Nuits d'astreinte</h2>
+  <div class="card tablecard">
+    <table class="atable hours">
+      <thead><tr><th>Date</th><th>À domicile</th><th id="ah-c1"></th><th id="ah-c2"></th></tr></thead>
+      <tbody id="ah-body"></tbody>
+      <tfoot id="ah-foot"></tfoot>
+    </table>
+  </div>
+  <h2>Dimanches</h2>
+  <div class="card tablecard">
+    <table class="atable">
+      <thead><tr><th>Date</th><th>Astreinte</th><th>Hôpital (en plus)</th><th>Montant</th></tr></thead>
+      <tbody id="ahs-body"></tbody>
+      <tfoot id="ahs-foot"></tfoot>
+    </table>
+  </div>
+  <div class="card ytd" id="ah-total"></div>
+  <div class="note">Temps au CHU / à l'hôpital compté avec 30 min avant chaque arrivée et 30 min après chaque départ. Touche une ligne pour la corriger ou la supprimer.</div>
+  <div class="actions"><button class="btn ghost" id="x-astr">Exporter en Excel</button></div>
+  <div class="note">Nuits, dimanches et récap par mois. Choisis « Enregistrer dans Fichiers » puis Google Drive pour le retrouver dans le Drive.</div>
+  <div id="ah-edit"></div>
+</section>
+
+<!-- ============ PARAMÈTRES ============ -->
+<section class="view" id="v-set">
+  <h1>Paramètres</h1>
+  <h2>Journée normale</h2>
+  <div class="card">
+    <div class="field"><label for="s-std">Heures par jour</label><input type="text" inputmode="decimal" id="s-std"></div>
+    <div class="note" style="margin:8px 0 0">Tout ce qui dépasse compte en heures sup. Exemple : 10 ou 7,5.</div>
+  </div>
+  <h2>Bilan mensuel par e-mail</h2>
+  <div class="card">
+    <div class="field"><label for="s-name">Prénom</label><input type="text" id="s-name" autocomplete="given-name"></div>
+    <div class="field"><label for="s-mail">Adresse e-mail</label><input type="email" id="s-mail" autocomplete="email"></div>
+    <div class="field"><label for="s-mailon">Rappel le 1er du mois à 20h</label><input type="checkbox" id="s-mailon"></div>
+    <div class="note" style="margin:8px 0 0">Le 1er de chaque mois à partir de 20h, l'appli propose d'envoyer le bilan du mois précédent : un seul appui ouvre l'e-mail déjà rempli, il ne reste qu'à toucher « Envoyer ».</div>
+  </div>
+  <h2>Astreintes</h2>
+  <div class="card" id="s-astr"></div>
+  <div class="note">Les tarifs s'appliquent à toutes les astreintes, y compris celles déjà enregistrées.</div>
+  <div id="sync-sec"><h2>Sauvegarde en ligne</h2><div class="card" id="sync-card"></div></div>
+  <h2>Sauvegarde dans un fichier</h2>
+  <div class="card">
+    <div class="note" style="margin:0 0 4px">Tes horaires et astreintes sont enregistrés uniquement sur ce téléphone. Fais une sauvegarde de temps en temps (dans Fichiers ou par e-mail) au cas où tu changes de téléphone.</div>
+    <div class="note" id="s-last" style="margin:6px 0 0"></div>
+    <div class="actions">
+      <button class="btn" id="s-export">Sauvegarder</button>
+      <button class="btn ghost" id="s-import">Restaurer</button>
+    </div>
+    <input type="file" id="s-file" accept=".json,application/json" style="display:none">
+  </div>
+  <h2>À propos</h2>
+  <div class="card"><div class="note" style="margin:0" id="s-about"></div></div>
+</section>
+
+<nav class="tabbar">
+  <button class="on" data-view="home"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Pointer</button>
+  <button data-view="hist"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Historique</button>
+  <button data-view="menu"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Menu</button>
+</nav>
+
+<div class="backdrop" id="backdrop"></div>
+<div class="sheet" id="sheet" role="dialog" aria-label="Menu">
+  <div class="grip"></div>
+  <h3>Menu</h3>
+  <button class="menu-item" data-go="stats"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div><div><b>Bilan</b><span>Semaine, mois et heures sup</span></div></button>
+  <button class="menu-item" data-go="wstat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/></svg></div><div><b>Statistique temps de travail</b><span>Toutes les semaines et tous les mois</span></div></button>
+  <button class="menu-item" data-go="astr"><div class="ic"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></div><div><b>Astreinte</b><span>Pointer la nuit en cours</span></div></button>
+  <button class="menu-item" data-go="astrhist"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg></div><div><b>Historique des astreintes</b><span>Nuits passées et indemnisation</span></div></button>
+  <button class="menu-item" data-go="set"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></div><div><b>Paramètres</b><span>Journée, e-mail, tarifs, sauvegarde</span></div></button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- Données ----------
+   Pointages :  { "2026-10-21": { "a": "08:02", "d": "18:10" } }   (a = arrivée, d = départ)
+   Astreintes : { "2026-10-21": { "st": "20:00", "r": {tarifs}, "p": [ { "c": "03:10", "a": "03:30", "d": "05:00" } ] } }
+                la clé est la date du soir où l'astreinte commence ; c = rappel, a = arrivée hôpital, d = départ réel */
+const KEY = 'pointage.v1', SET = 'pointage.settings.v1', AKEY = 'pointage.astreintes.v1';
+const DEF_RATES = { s: 19.5, m: 21, e: 7.75, h: 3.98, c1: 20.08, c2: 40.16, t: 30, tb: 30, ss: 9.5, se: 14.5, sh: 7.5, sc: 33.46 };
+const DKEY = 'pointage.dimanches.v1';
+function load(k, def){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; }catch(e){ return def; } }
+let data = load(KEY, {});
+let astr = load(AKEY, {});
+let dim = load(DKEY, {});
+const isNew = (() => { try{ return !localStorage.getItem(SET); }catch(e){ return false; } })();
+let settings = Object.assign({ std: 10, lastExport: null, name: '', mail: '', mailOn: true, lastMail: null }, load(SET, {}));
+if (settings.setupDone === undefined) settings.setupDone = !isNew;
+settings.rates = Object.assign({}, DEF_RATES, settings.rates || {});
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){ toast("Erreur d'enregistrement"); } markDirty(); }
+function saveA(){ try{ localStorage.setItem(AKEY, JSON.stringify(astr)); }catch(e){ toast("Erreur d'enregistrement"); } markDirty(); }
+function saveD(){ try{ localStorage.setItem(DKEY, JSON.stringify(dim)); }catch(e){ toast("Erreur d'enregistrement"); } markDirty(); }
+function saveSettings(){ try{ localStorage.setItem(SET, JSON.stringify(settings)); }catch(e){} markDirty(); }
+if ((settings.ratesV || 0) < 3){ settings.rates = Object.assign({}, DEF_RATES); settings.ratesV = 3; saveSettings(); }
+if (settings.ratesV < 4){ Object.assign(settings.rates, { s: 19.5, e: 7.75, ss: 9.5, se: 14.5, sh: 7.5, sc: 33.46 }); settings.ratesV = 4; saveSettings(); }
+if (navigator.storage && navigator.storage.persist) { navigator.storage.persist().catch(()=>{}); }
+
+/* ---------- Outils dates / heures ---------- */
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseYmd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const hm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const toMin = s => { const [h,m] = s.split(':').map(Number); return h*60 + m; };
+const stdMin = () => Math.round(settings.std * 60);
+function dur(e){ if(!e || !e.a || !e.d) return null; let x = toMin(e.d) - toMin(e.a); if (x < 0) x += 1440; return x; }
+function fmt(min){ if (min == null) return '—'; const s = min < 0 ? '−' : ''; min = Math.abs(Math.round(min)); return `${s}${Math.floor(min/60)}h${pad(min%60)}`; }
+function fmtSigned(min){ if (min == null) return '—'; return (min > 0 ? '+' : '') + fmt(min); }
+function cls(min){ return min > 0 ? 'pos' : (min < 0 ? 'neg' : ''); }
+const eur = n => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+const nb = n => String(n).replace('.', ',');
+const hh = h => { const m = Math.round(h * 60); return `${Math.floor(m / 60)}h${m % 60 ? pad(m % 60) : ''}`; };
+const hhm = h => { const m = Math.round(h * 60); return `${Math.floor(m / 60)}h${pad(m % 60)}`; };
+const dayName = d => d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+const dayShort = d => d.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
+const monthName = d => d.toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
+const capit = s => s.charAt(0).toUpperCase() + s.slice(1);
+function isoWeek(d){
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y = t.getUTCFullYear();
+  return { y, w: Math.ceil(((t - Date.UTC(y,0,1)) / 864e5 + 1) / 7) };
+}
+function isoMonday(y, w){ const j4 = new Date(y, 0, 4); const day = j4.getDay() || 7; return new Date(y, 0, 4 - day + 1 + (w-1)*7); }
+function weeksInYear(y){ return isoWeek(new Date(y, 11, 28)).w; }
+function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function monthKeys(y, m){ const n = new Date(y, m+1, 0).getDate(); return [...Array(n)].map((_, i) => ymd(new Date(y, m, i+1))); }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+let tt; function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(()=>t.classList.remove('show'), 2600); }
+
+/* Résumé d'une liste de jours */
+function summarize(dates){
+  let total = 0, sup = 0, days = 0, incomplete = 0;
+  dates.forEach(k => { const e = data[k]; if(!e) return; const m = dur(e);
+    if (m == null){ incomplete++; return; } total += m; sup += m - stdMin(); days++; });
+  return { total, sup, days, incomplete };
+}
+function itemHtml(k, opts={}){
+  const e = data[k] || {}; const m = dur(e); const d = parseYmd(k);
+  const times = (e.a || '--:--') + ' → ' + (e.d || '--:--');
+  const s = m == null ? (e.a || e.d ? '<span class="neg">incomplet</span>' : '') : `<span class="${cls(m - stdMin())}">${fmtSigned(m - stdMin())}</span>`;
+  return `<div class="item" data-date="${k}"><div><div class="d">${esc(opts.short ? dayShort(d) : dayName(d))}</div><div class="t num">${e.a||e.d ? times : 'Non travaillé'}</div></div>
+    <div><div class="h num">${fmt(m)}</div><div class="s num">${s}</div></div></div>`;
+}
+
+/* ---------- Navigation ---------- */
+const MENU_VIEWS = ['stats', 'wstat', 'astr', 'dim', 'astrhist', 'set'];
+function show(view){
+  closeMenu();
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + view));
+  document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('on', b.dataset.view === view || (b.dataset.view === 'menu' && MENU_VIEWS.includes(view))));
+  window.scrollTo(0, 0);
+  render();
+}
+function openMenu(){ document.body.classList.add('menu-open'); }
+function closeMenu(){ document.body.classList.remove('menu-open'); }
+document.querySelectorAll('.tabbar button').forEach(b => b.onclick = () => {
+  if (b.dataset.view === 'menu') document.body.classList.contains('menu-open') ? closeMenu() : openMenu();
+  else show(b.dataset.view);
+});
+document.querySelectorAll('.menu-item').forEach(b => b.onclick = () => show(b.dataset.go));
+$('backdrop').onclick = closeMenu;
+function openDay(k){ $('e-date').value = k; loadEditor(); show('hist'); }
+document.addEventListener('click', ev => {
+  const it = ev.target.closest('.item[data-date]'); if (it) return openDay(it.dataset.date);
+});
+
+/* ---------- Pointer ---------- */
+function renderHome(){
+  const now = new Date(), k = ymd(now), e = data[k] || {};
+  $('today-label').textContent = dayName(now);
+  let big = '—', lbl = "Pas encore pointé aujourd'hui";
+  if (e.a && !e.d){ let m = toMin(hm(now)) - toMin(e.a); if (m < 0) m += 1440; big = fmt(m); lbl = `Au travail depuis ${e.a}`; }
+  else if (e.a && e.d){ big = fmt(dur(e)); lbl = `Journée terminée (${e.a} → ${e.d})`; }
+  else if (!e.a && e.d){ lbl = 'Départ pointé, arrivée manquante'; }
+  $('live').textContent = big; $('live-lbl').textContent = lbl;
+  $('in-hint').textContent = e.a ? `Arrivée pointée à ${e.a}` : "Pointer l'arrivée";
+  $('out-hint').textContent = e.d ? `Départ pointé à ${e.d}` : 'Pointer le départ';
+  $('b-in').classList.toggle('dim', !!e.a);
+  $('b-out').classList.toggle('dim', !e.a || !!e.d);
+  const m = dur(e);
+  $('today-card').innerHTML = `
+    <div class="row"><span class="k">Arrivée</span><span class="v num">${e.a || '—'}</span></div>
+    <div class="row"><span class="k">Départ</span><span class="v num">${e.d || '—'}</span></div>
+    <div class="row"><span class="k">Heures sup</span><span class="v num ${m==null?'':cls(m-stdMin())}">${m==null?'—':fmtSigned(m-stdMin())}</span></div>`;
+  const {y, w} = isoWeek(now), mon = isoMonday(y, w);
+  const ks = [...Array(7)].map((_, i) => ymd(addDays(mon, i)));
+  const s = summarize(ks);
+  $('week-card').innerHTML = `
+    <div class="row"><span class="k">Semaine ${w}</span><span class="v num">${fmt(s.total)} · ${s.days} j</span></div>
+    <div class="row"><span class="k">Heures sup</span><span class="v num ${cls(s.sup)}">${fmtSigned(s.sup)}</span></div>`;
+  renderMailBanner();
+}
+$('b-in').onclick = () => {
+  const now = new Date(), k = ymd(now), t = hm(now), e = data[k] || {};
+  if (e.a && !confirm(`Arrivée déjà pointée à ${e.a}.\nLa remplacer par ${t} ?`)) return;
+  data[k] = Object.assign({}, e, { a: t }); save(); renderHome();
+  toast(`Arrivée pointée à ${t} ✓`);
+};
+$('b-out').onclick = () => {
+  const now = new Date(), k = ymd(now), t = hm(now), e = data[k] || {};
+  if (e.d && !confirm(`Départ déjà pointé à ${e.d}.\nLe remplacer par ${t} ?`)) return;
+  data[k] = Object.assign({}, e, { d: t }); save(); renderHome();
+  if (!e.a){ toast("Départ pointé. Ajoute l'heure d'arrivée"); openDay(k); }
+  else toast(`Départ pointé à ${t} · ${fmt(dur(data[k]))} ✓`);
+};
+
+/* ---------- Historique ---------- */
+function loadEditor(){
+  const k = $('e-date').value; const e = data[k] || {};
+  $('e-a').value = e.a || ''; $('e-d').value = e.d || ''; updDur();
+}
+function updDur(){ const m = dur({ a: $('e-a').value, d: $('e-d').value }); $('e-dur').textContent = m == null ? '—' : `${fmt(m)} (${fmtSigned(m - stdMin())})`; }
+$('e-date').onchange = loadEditor; $('e-a').oninput = updDur; $('e-d').oninput = updDur;
+$('e-save').onclick = () => {
+  const k = $('e-date').value; if (!k) return toast('Choisis une date');
+  const a = $('e-a').value, d = $('e-d').value;
+  if (!a && !d){ delete data[k]; } else { data[k] = {}; if (a) data[k].a = a; if (d) data[k].d = d; }
+  save(); renderHist(); toast('Journée enregistrée ✓');
+};
+$('e-del').onclick = () => {
+  const k = $('e-date').value; if (!data[k]) return toast('Rien à effacer pour ce jour');
+  if (!confirm(`Effacer les horaires du ${dayName(parseYmd(k))} ?`)) return;
+  delete data[k]; save(); loadEditor(); renderHist(); toast('Journée effacée');
+};
+function renderHist(){
+  if (!$('e-date').value){ $('e-date').value = ymd(new Date()); loadEditor(); }
+  const ks = Object.keys(data).sort().reverse().slice(0, 30);
+  $('recent').innerHTML = ks.length ? ks.map(k => itemHtml(k)).join('') : '<div class="empty">Aucun pointage pour le moment</div>';
+}
+
+/* ---------- Bilan ---------- */
+let mode = 'week';
+let wy = isoWeek(new Date()).y, ww = isoWeek(new Date()).w;
+let mDate = new Date(); mDate.setDate(1);
+document.querySelectorAll('.seg button[data-mode]').forEach(b => b.onclick = () => {
+  mode = b.dataset.mode; document.querySelectorAll('.seg button[data-mode]').forEach(x => x.classList.toggle('on', x === b)); renderStats();
+});
+function setWeek(y, w){
+  if (w < 1){ y--; w = weeksInYear(y); } else if (w > weeksInYear(y)){ y++; w = 1; }
+  wy = y; ww = w; renderStats();
+}
+$('w-prev').onclick = () => setWeek(wy, ww - 1);
+$('w-next').onclick = () => setWeek(wy, ww + 1);
+$('w-num').onchange = () => { const w = parseInt($('w-num').value, 10); if (w >= 1 && w <= 53) setWeek(wy, Math.min(w, weeksInYear(wy))); };
+$('w-year').onchange = () => { const y = parseInt($('w-year').value, 10); if (y >= 2000 && y <= 2100) setWeek(y, Math.min(ww, weeksInYear(y))); };
+$('m-prev').onclick = () => { mDate.setMonth(mDate.getMonth() - 1); renderStats(); };
+$('m-next').onclick = () => { mDate.setMonth(mDate.getMonth() + 1); renderStats(); };
+$('m-pick').onchange = () => { const v = $('m-pick').value; if (v){ const [y,m] = v.split('-').map(Number); mDate = new Date(y, m-1, 1); renderStats(); } };
+$('m-mail').onclick = () => sendMonthMail(mDate.getFullYear(), mDate.getMonth());
+
+function renderStats(){
+  $('week-box').style.display = mode === 'week' ? '' : 'none';
+  $('month-box').style.display = mode === 'month' ? '' : 'none';
+  $('m-mail-box').style.display = mode === 'month' ? '' : 'none';
+  let ks, html, label;
+  if (mode === 'week'){
+    const mon = isoMonday(wy, ww), sun = addDays(mon, 6);
+    $('w-title').textContent = `Semaine ${ww} · ${wy}`;
+    $('w-range').textContent = `du ${dayShort(mon)} au ${dayShort(sun)} ${sun.getFullYear()}`;
+    $('w-num').value = ww; $('w-year').value = wy;
+    ks = [...Array(7)].map((_, i) => ymd(addDays(mon, i)));
+    html = ks.map(k => itemHtml(k, { short: true })).join('');
+    label = 'de la semaine';
+  } else {
+    const y = mDate.getFullYear(), m = mDate.getMonth();
+    $('m-title').textContent = capit(monthName(mDate));
+    $('m-pick').value = `${y}-${pad(m+1)}`;
+    ks = monthKeys(y, m);
+    const worked = ks.filter(k => data[k]);
+    html = worked.length ? worked.map(k => itemHtml(k, { short: true })).join('') : '<div class="empty">Aucun pointage ce mois-ci</div>';
+    label = 'du mois';
+  }
+  const s = summarize(ks);
+  $('k-total').textContent = fmt(s.total);
+  $('k-days').textContent = s.days;
+  $('k-sup').textContent = fmtSigned(s.sup);
+  $('k-sup').className = 'v num ' + cls(s.sup);
+  $('k-sup-lbl').textContent = `Heures supplémentaires ${label} (base ${nb(settings.std)} h/jour)`;
+  $('k-note').textContent = s.incomplete ? `${s.incomplete} jour(s) incomplet(s) non comptés : touche-les pour ajouter l'heure manquante.` : '';
+  $('stats-list').innerHTML = html;
+}
+
+/* ---------- Statistique temps de travail ---------- */
+let wsYear = new Date().getFullYear(), wsMode = 'week';
+$('ws-prev').onclick = () => { wsYear--; renderWStat(); };
+$('ws-next').onclick = () => { wsYear++; renderWStat(); };
+document.querySelectorAll('[data-ws]').forEach(b => b.onclick = () => {
+  wsMode = b.dataset.ws; document.querySelectorAll('[data-ws]').forEach(x => x.classList.toggle('on', x === b)); renderWStat();
+});
+const supTxt = m => `<span class="${cls(m)}">${m > 0 ? '+' : m < 0 ? '−' : ''}${Math.abs(Math.round(m))} min</span>`;
+function renderWStat(){
+  const now = new Date(), cur = wsYear === now.getFullYear();
+  $('ws-title').textContent = `Année ${wsYear}`;
+  $('ws-base').textContent = `Base : ${nb(settings.std)} h par jour travaillé`;
+  $('ws-col1').textContent = wsMode === 'week' ? 'Semaine' : 'Mois';
+  const rows = [];
+  if (wsMode === 'week'){
+    const n = weeksInYear(wsYear);
+    for (let w = n; w >= 1; w--){
+      const mon = isoMonday(wsYear, w); if (mon > now) continue;
+      const s = summarize([...Array(7)].map((_, i) => ymd(addDays(mon, i))));
+      if (!s.days && !s.incomplete) continue;
+      const sun = addDays(mon, 6);
+      rows.push({ key: `w:${w}`, label: `Semaine ${w}`, sub: `${pad(mon.getDate())}/${pad(mon.getMonth()+1)} → ${pad(sun.getDate())}/${pad(sun.getMonth()+1)}`, s });
+    }
+  } else {
+    for (let m = 11; m >= 0; m--){
+      if (new Date(wsYear, m, 1) > now) continue;
+      const s = summarize(monthKeys(wsYear, m));
+      rows.push({ key: `m:${m}`, label: capit(new Date(wsYear, m, 1).toLocaleDateString('fr-FR', { month: 'long' })), s });
+    }
+  }
+  $('ws-body').innerHTML = rows.length ? rows.map(r => `<tr data-ws-key="${r.key}"><td>${r.label}${r.sub ? `<small>${r.sub}</small>` : ''}${r.s.incomplete ? '<small class="neg">jour incomplet</small>' : ''}</td>
+    <td>${r.s.days || '—'}</td><td>${r.s.days ? fmt(r.s.total) : '—'}</td><td>${r.s.days ? supTxt(r.s.sup) : '—'}</td></tr>`).join('')
+    : '<tr><td colspan="4" class="empty" style="text-align:center">Aucun pointage cette année</td></tr>';
+  const keys = monthKeys(wsYear, 0).slice(0, 0);
+  for (let m = 0; m < 12; m++) keys.push(...monthKeys(wsYear, m));
+  const y = summarize(keys);
+  $('ws-foot').innerHTML = y.days ? `<tr><td>Total ${wsYear}</td><td>${y.days}</td><td>${fmt(y.total)}</td><td>${supTxt(y.sup)}</td></tr>` : '';
+  const sup = Math.round(y.sup);
+  const val = `${sup > 0 ? '+' : sup < 0 ? '−' : ''}${Math.abs(sup)} minutes (soit ${fmtSigned(sup)})`;
+  $('ws-ytd').innerHTML = `${cur ? `Depuis le 1<sup>er</sup> janvier ${wsYear}, le temps de travail supplémentaire est de` : `Sur toute l'année ${wsYear}, le temps de travail supplémentaire est de`}<b class="num ${cls(sup)}">${val}</b>`;
+  $('ws-note').textContent = `Minutes sup = temps travaillé − ${nb(settings.std)} h par jour travaillé (négatif si la journée est plus courte). Touche une ligne pour voir le détail jour par jour.`;
+}
+$('ws-body').onclick = ev => {
+  const tr = ev.target.closest('tr[data-ws-key]'); if (!tr) return;
+  const [t, v] = tr.dataset.wsKey.split(':');
+  if (t === 'w'){ wy = wsYear; ww = +v; mode = 'week'; }
+  else { mDate = new Date(wsYear, +v, 1); mode = 'month'; }
+  document.querySelectorAll('.seg button[data-mode]').forEach(x => x.classList.toggle('on', x.dataset.mode === mode));
+  show('stats');
+};
+
+/* ---------- Astreintes : calcul ----------
+   Minutes comptées depuis minuit le jour du soir de l'astreinte.
+   Une heure avant midi appartient au lendemain matin (ex. 03:30 → 27h30).
+   Tarifs toujours lus dans les Paramètres (s'appliquent à toutes les nuits). */
+const offOf = t => { const m = toMin(t); return m < 720 ? m + 1440 : m; };
+function nightKeyFor(d){ const x = new Date(d); if (x.getHours() < 12) x.setDate(x.getDate() - 1); return ymd(x); }
+function nowOffFor(k){ return Math.round((Date.now() - parseYmd(k).getTime()) / 60000); }
+function overlap(a, b, c, d){ return Math.max(0, Math.min(b, d) - Math.max(a, c)); }
+const R = () => settings.rates;
+const clock = m => `${pad(Math.floor(((m % 1440) + 1440) % 1440 / 60))}:${pad(((m % 60) + 60) % 60)}`;
+function parseHours(s){
+  s = String(s || '').trim().toLowerCase().replace(',', '.'); if (!s) return 0;
+  let m = s.match(/^(\d+)\s*h\s*(\d{1,2})?\s*(min)?$/); if (m) return +m[1] + (m[2] ? +m[2] / 60 : 0);
+  m = s.match(/^(\d+):(\d{2})$/); if (m) return +m[1] + +m[2] / 60;
+  if (!/^\d*\.?\d+$/.test(s)) return NaN; return parseFloat(s);
+}
+const hoursTxt = h => fmt(Math.round(h * 60));
+const hoursIn = h => h ? hoursTxt(h).replace(/h00$/, 'h') : '';
+function nightLabel(k){
+  const a = parseYmd(k), b = addDays(a, 1);
+  const end = b.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  if (a.getFullYear() !== b.getFullYear()) return `Du ${a.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} au ${end}`;
+  if (a.getMonth() !== b.getMonth()) return `Du ${a.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} au ${end}`;
+  return `Du ${a.getDate()} au ${end}`;
+}
+
+function calcNight(k, rec, live){
+  const r = R();
+  let home, h1, h2, issues = 0, ongoing = false;
+  if (rec.man){
+    home = rec.man.home * 60; h1 = rec.man.h1 * 60; h2 = rec.man.h2 * 60;
+  } else {
+    const W0 = r.s * 60, W1 = 1440 + r.e * 60, SP = (r.m < 12 ? r.m + 24 : r.m) * 60;
+    const nowOff = live ? nowOffFor(k) : null, p = rec.p || [];
+    const iv = [];
+    p.forEach((x, i) => {
+      if (!x.a) return;
+      const a = offOf(x.a); let e;
+      if (x.d){ const d = offOf(x.d); if (d < a){ issues++; return; } e = d + r.t; }
+      else if (live && i === p.length - 1){ e = Math.max(nowOff, a); ongoing = true; }
+      else { issues++; return; }
+      iv.push([a - r.tb, e]);
+    });
+    iv.sort((x, y) => x[0] - y[0]);
+    const merged = [];
+    iv.forEach(x => { const l = merged[merged.length - 1]; if (l && x[0] <= l[1]) l[1] = Math.max(l[1], x[1]); else merged.push(x.slice()); });
+    h1 = 0; h2 = 0; let inW = 0;
+    merged.forEach(([s, f]) => { h1 += overlap(s, f, -1e9, SP); h2 += overlap(s, f, SP, 1e9); inW += overlap(s, f, W0, W1); });
+    home = (W1 - W0) - inW;
+  }
+  const pay = { home: home / 60 * r.h, h1: h1 / 60 * r.c1, h2: h2 / 60 * r.c2 };
+  return { r, home, h1, h2, hosp: h1 + h2, pay, total: pay.home + pay.h1 + pay.h2, issues, ongoing, manual: !!rec.man };
+}
+function breakdownHtml(c, title){
+  const r = c.r;
+  return `<h2>${title}</h2><div class="card">
+    <div class="row"><span class="k">À domicile · ${fmt(c.home)} × ${nb(r.h)} €</span><span class="v num">${eur(c.pay.home)}</span></div>
+    <div class="row"><span class="k">CHU ${hh(r.s)}–${hh(r.m)} · ${fmt(c.h1)} × ${nb(r.c1)} €</span><span class="v num">${eur(c.pay.h1)}</span></div>
+    <div class="row"><span class="k">CHU ${hh(r.m)}–${hh(r.e)} · ${fmt(c.h2)} × ${nb(r.c2)} €</span><span class="v num">${eur(c.pay.h2)}</span></div>
+    <div class="row total"><span class="k">Montant estimatif</span><span class="v num">${eur(c.total)}</span></div>
+  </div>
+  <div class="note">${c.manual ? 'Astreinte saisie manuellement.' : `Temps au CHU compté de ${r.tb} min avant chaque arrivée à ${r.t} min après chaque départ.`}${c.issues ? ` <span class="neg">${c.issues} passage(s) incomplet(s) non compté(s).</span>` : ''}</div>`;
+}
+
+/* ---------- Astreinte : page du jour ---------- */
+function activeNight(){
+  const k = nightKeyFor(new Date()); const rec = astr[k]; if (!rec || rec.man) return null;
+  const p = rec.p || [], last = p[p.length - 1];
+  const ended = nowOffFor(k) >= 1440 + R().e * 60;
+  const atCHU = !!(last && last.a && !last.d);
+  return { k, rec, ended: ended && !atCHU, atCHU, last };
+}
+function renderAstr(){
+  const n = activeNight(), r = R();
+  const started = !!n && !n.ended, atCHU = !!(n && n.atCHU), last = n && n.last;
+  $('ab-start').classList.toggle('dim', started);
+  $('ab-arrive').classList.toggle('dim', atCHU);
+  $('ab-leave').classList.toggle('dim', !atCHU);
+  $('ab-start-h').textContent = started ? `Astreinte en cours depuis ${hhm(r.s)}` : `De ${hhm(r.s)} à ${hhm(r.e)}`;
+  $('ab-arrive-h').textContent = atCHU ? `Au CHU depuis ${last.a}` : `${r.tb} min de trajet aller comptées`;
+  $('ab-sun-h').textContent = activeSun() && !activeSun().ended ? 'Astreinte du dimanche en cours' : `Astreinte de ${hh(r.ss)} à ${hh(r.se)}`;
+  $('ab-leave-h').textContent = !atCHU && last && last.d && started ? `Parti du CHU à ${last.d}` : `${r.t} min de trajet retour comptées`;
+  if (!n){
+    $('a-label').textContent = 'Aucune astreinte en cours';
+    $('a-big').textContent = '—';
+    $('a-lbl').textContent = `Astreinte de ${hh(r.s)} à ${hh(r.e)} le lendemain`;
+    $('a-detail').innerHTML = '';
+    return;
+  }
+  const { k, rec } = n, p = rec.p || [];
+  const c = calcNight(k, rec, true);
+  $('a-label').textContent = nightLabel(k);
+  $('a-big').textContent = eur(c.total);
+  const state = n.ended ? 'Astreinte terminée' : atCHU ? `Au CHU depuis ${last.a}` : "D'astreinte à domicile";
+  $('a-lbl').textContent = `${state} · montant estimatif de la nuit`;
+  const ev = [`<li><span class="tm num">${clock(r.s * 60)}</span><span class="tx">Début de l'astreinte</span></li>`];
+  p.forEach(x => {
+    if (x.a) ev.push(`<li><span class="tm num">${x.a}</span><span class="tx">Arrivée au CHU (comptée dès ${clock(offOf(x.a) - r.tb)})</span></li>`);
+    if (x.d) ev.push(`<li><span class="tm num">${x.d}</span><span class="tx">Départ du CHU (compté jusqu'à ${clock(offOf(x.d) + r.t)})</span></li>`);
+  });
+  $('a-detail').innerHTML = `
+    <h2>Cette nuit</h2><div class="card"><ul class="timeline">${ev.join('')}</ul>
+      <div class="row"><span class="k">Temps au CHU</span><span class="v num">${fmt(c.hosp)}</span></div>
+      <div class="row"><span class="k">Temps à domicile</span><span class="v num">${fmt(c.home)}</span></div>
+    </div>
+    ${breakdownHtml(c, n.ended ? 'Montant de la nuit' : "Montant estimatif (si pas d'autre appel)")}
+    <div class="actions"><button class="btn ghost" id="ab-fix">Corriger cette nuit</button></div>`;
+  $('ab-fix').onclick = () => openNight(k);
+}
+function ensureNight(){
+  const k = nightKeyFor(new Date());
+  if (!astr[k] || astr[k].man) astr[k] = { st: clock(R().s * 60), p: [] };
+  return k;
+}
+$('ab-start').onclick = () => {
+  const n = activeNight();
+  if (n && !n.ended) return toast(`Astreinte déjà commencée à ${hhm(R().s)}`);
+  if (n && n.ended) return toast("L'astreinte de cette nuit est terminée");
+  ensureNight(); saveA(); renderAstr(); toast(`Astreinte commencée (comptée dès ${hhm(R().s)}) ✓`);
+};
+$('ab-arrive').onclick = () => {
+  const n = activeNight();
+  if (n && n.atCHU) return toast(`Déjà au CHU depuis ${n.last.a}`);
+  if (n && n.ended) return toast(`L'astreinte de cette nuit est terminée (${hh(R().e)})`);
+  const k = ensureNight(), t = hm(new Date());
+  astr[k].p.push({ a: t }); saveA(); renderAstr();
+  toast(`Arrivée au CHU à ${t} ✓`);
+};
+$('ab-leave').onclick = () => {
+  const n = activeNight();
+  if (!n || !n.atCHU) return toast("Pas d'arrivée au CHU en cours");
+  const t = hm(new Date()); n.last.d = t; saveA(); renderAstr();
+  toast(`Départ du CHU à ${t}, +${R().t} min de trajet ✓`);
+};
+
+/* Saisie manuelle */
+function manFieldsHtml(prefix, v){
+  return `<div class="field"><label for="${prefix}-home">Heures à domicile</label><input type="text" inputmode="decimal" id="${prefix}-home" value="${hoursIn(v.home)}" placeholder="ex. 8 ou 8h30"></div>
+    <div class="field"><label for="${prefix}-h1">Heures CHU ${hh(R().s)}–${hh(R().m)}</label><input type="text" inputmode="decimal" id="${prefix}-h1" value="${hoursIn(v.h1)}" placeholder="0"></div>
+    <div class="field"><label for="${prefix}-h2">Heures CHU ${hh(R().m)}–${hh(R().e)}</label><input type="text" inputmode="decimal" id="${prefix}-h2" value="${hoursIn(v.h2)}" placeholder="0"></div>`;
+}
+function readMan(prefix){ return { home: parseHours($(prefix + '-home').value), h1: parseHours($(prefix + '-h1').value), h2: parseHours($(prefix + '-h2').value) }; }
+function manSummary(v){
+  if ([v.home, v.h1, v.h2].some(x => isNaN(x))) return { eur: '—', note: '<span class="neg">Écris les heures comme 8, 8,5 ou 8h30.</span>' };
+  const c = calcNight('', { man: v }), tot = v.home + v.h1 + v.h2;
+  return { eur: eur(c.total), note: `Total saisi : ${hoursTxt(tot)} (une nuit complète = ${hoursTxt(24 - R().s + R().e)}).` };
+}
+function updMan(){ const s = manSummary(readMan('man')); $('man-eur').textContent = s.eur; $('man-note').innerHTML = s.note;
+  const k = $('man-date').value; $('man-range').textContent = k ? nightLabel(k) : ''; }
+$('man-date').onchange = updMan;
+$('ab-manual').onclick = () => {
+  $('man-box').style.display = '';
+  $('man-date').value = ymd(addDays(new Date(), -1));
+  $('man-fields').innerHTML = manFieldsHtml('man', {});
+  ['man-home', 'man-h1', 'man-h2'].forEach(id => $(id).oninput = updMan);
+  updMan(); $('man-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+$('man-cancel').onclick = () => { $('man-box').style.display = 'none'; };
+function saveManual(k, v, replacing){
+  if (!k){ toast('Choisis la date'); return false; }
+  if ([v.home, v.h1, v.h2].some(x => isNaN(x))){ toast('Heures invalides'); return false; }
+  if (v.home + v.h1 + v.h2 <= 0){ toast('Indique au moins une durée'); return false; }
+  if (!replacing && astr[k] && !confirm(`Une astreinte existe déjà pour la nuit ${nightLabel(k).toLowerCase()}. La remplacer ?`)) return false;
+  astr[k] = { st: clock(R().s * 60), man: { home: +v.home.toFixed(4), h1: +v.h1.toFixed(4), h2: +v.h2.toFixed(4) } };
+  saveA(); return true;
+}
+$('man-ok').onclick = () => {
+  const k = $('man-date').value;
+  if (!saveManual(k, readMan('man'), false)) return;
+  $('man-box').style.display = 'none';
+  toast('Astreinte ajoutée ✓');
+  const d = parseYmd(k); amDate = new Date(d.getFullYear(), d.getMonth(), 1); edK = null;
+  show('astrhist');
+};
+
+/* ---------- Dimanche : calcul ----------
+   Astreinte de jour (par défaut 9h30 → 14h30), heures du jour même.
+   Le forfait d'astreinte (toute la plage) est toujours payé ; le temps à l'hôpital s'ajoute
+   en plus, avec 30 min avant chaque arrivée et 30 min après chaque départ. */
+function sunLabel(k){ return capit(parseYmd(k).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })); }
+function calcSun(k, rec, live){
+  const r = R();
+  let home, hosp = 0, issues = 0, ongoing = false;
+  if (rec.man){ home = rec.man.home * 60; hosp = rec.man.hosp * 60; }
+  else {
+    const W0 = r.ss * 60, W1 = r.se * 60, nowOff = live ? nowOffFor(k) : null, p = rec.p || [], iv = [];
+    p.forEach((x, i) => {
+      if (!x.a) return;
+      const a = toMin(x.a); let e;
+      if (x.d){ const d = toMin(x.d); if (d < a){ issues++; return; } e = d + r.t; }
+      else if (live && i === p.length - 1){ e = Math.max(nowOff, a); ongoing = true; }
+      else { issues++; return; }
+      iv.push([a - r.tb, e]);
+    });
+    iv.sort((x, y) => x[0] - y[0]);
+    const merged = [];
+    iv.forEach(x => { const l = merged[merged.length - 1]; if (l && x[0] <= l[1]) l[1] = Math.max(l[1], x[1]); else merged.push(x.slice()); });
+    merged.forEach(([s, f]) => { hosp += f - s; });
+    home = W1 - W0;   // forfait : toute la plage est payée, même pendant les passages à l'hôpital
+  }
+  const pay = { home: home / 60 * r.sh, hosp: hosp / 60 * r.sc };
+  return { r, home, hosp, pay, total: pay.home + pay.hosp, issues, ongoing, manual: !!rec.man };
+}
+function sunBreakdownHtml(c, title){
+  const r = c.r;
+  return `<h2>${title}</h2><div class="card">
+    <div class="row"><span class="k">Astreinte ${hh(r.ss)}–${hh(r.se)} · ${fmt(c.home)} × ${nb(r.sh)} €</span><span class="v num">${eur(c.pay.home)}</span></div>
+    <div class="row"><span class="k">+ Hôpital · ${fmt(c.hosp)} × ${nb(r.sc)} €</span><span class="v num">${eur(c.pay.hosp)}</span></div>
+    <div class="row total"><span class="k">Montant estimatif</span><span class="v num">${eur(c.total)}</span></div>
+  </div>
+  <div class="note">${c.manual ? 'Dimanche saisi manuellement.' : `Temps à l'hôpital compté de ${r.tb} min avant chaque arrivée à ${r.t} min après chaque départ.`}${c.issues ? ` <span class="neg">${c.issues} passage(s) incomplet(s) non compté(s).</span>` : ''}</div>`;
+}
+
+/* ---------- Dimanche : page du jour ---------- */
+function activeSun(){
+  const k = ymd(new Date()), rec = dim[k]; if (!rec || rec.man) return null;
+  const p = rec.p || [], last = p[p.length - 1];
+  const atH = !!(last && last.a && !last.d);
+  const ended = nowOffFor(k) >= R().se * 60 && !atH;
+  return { k, rec, ended, atH, last };
+}
+function renderDim(){
+  const n = activeSun(), r = R();
+  const started = !!n && !n.ended, atH = !!(n && n.atH), last = n && n.last;
+  $('db-start').classList.toggle('dim', started);
+  $('db-arrive').classList.toggle('dim', atH);
+  $('db-leave').classList.toggle('dim', !atH);
+  $('db-start-h').textContent = started ? `En cours depuis ${hhm(r.ss)}` : `De ${hhm(r.ss)} à ${hhm(r.se)}`;
+  $('db-arrive-h').textContent = atH ? `À l'hôpital depuis ${last.a}` : `${r.tb} min de trajet aller comptées`;
+  $('db-leave-h').textContent = !atH && last && last.d && started ? `Parti de l'hôpital à ${last.d}` : `${r.t} min de trajet retour comptées`;
+  if (!n){
+    $('d-label').textContent = "Aucune astreinte du dimanche en cours";
+    $('d-big').textContent = '—';
+    $('d-lbl').textContent = `Astreinte de ${hh(r.ss)} à ${hh(r.se)}`;
+    $('d-detail').innerHTML = '';
+    return;
+  }
+  const { k, rec } = n, p = rec.p || [], c = calcSun(k, rec, true);
+  $('d-label').textContent = sunLabel(k);
+  $('d-big').textContent = eur(c.total);
+  const state = n.ended ? 'Astreinte terminée' : atH ? `À l'hôpital depuis ${last.a}` : "D'astreinte à domicile";
+  $('d-lbl').textContent = `${state} · montant estimatif`;
+  const ev = [`<li><span class="tm num">${clock(r.ss * 60)}</span><span class="tx">Début de l'astreinte</span></li>`];
+  p.forEach(x => {
+    if (x.a) ev.push(`<li><span class="tm num">${x.a}</span><span class="tx">Arrivée à l'hôpital (comptée dès ${clock(toMin(x.a) - r.tb)})</span></li>`);
+    if (x.d) ev.push(`<li><span class="tm num">${x.d}</span><span class="tx">Départ de l'hôpital (compté jusqu'à ${clock(toMin(x.d) + r.t)})</span></li>`);
+  });
+  $('d-detail').innerHTML = `
+    <h2>Aujourd'hui</h2><div class="card"><ul class="timeline">${ev.join('')}</ul>
+      <div class="row"><span class="k">Astreinte (forfait)</span><span class="v num">${fmt(c.home)}</span></div>
+      <div class="row"><span class="k">Temps à l'hôpital (en plus)</span><span class="v num">${fmt(c.hosp)}</span></div>
+    </div>
+    ${sunBreakdownHtml(c, n.ended ? 'Montant du dimanche' : "Montant estimatif (si pas d'autre appel)")}
+    <div class="actions"><button class="btn ghost" id="db-fix">Corriger ce dimanche</button></div>`;
+  $('db-fix').onclick = () => openSun(k);
+}
+function ensureSun(){ const k = ymd(new Date()); if (!dim[k] || dim[k].man) dim[k] = { p: [] }; return k; }
+$('ab-sun').onclick = () => show('dim');
+$('d-back').onclick = () => show('astr');
+$('db-start').onclick = () => {
+  const n = activeSun();
+  if (n && !n.ended) return toast(`Astreinte déjà commencée à ${hhm(R().ss)}`);
+  if (n && n.ended) return toast("L'astreinte du dimanche est terminée");
+  ensureSun(); saveD(); renderDim(); toast(`Astreinte du dimanche commencée (comptée dès ${hhm(R().ss)}) ✓`);
+};
+$('db-arrive').onclick = () => {
+  const n = activeSun();
+  if (n && n.atH) return toast(`Déjà à l'hôpital depuis ${n.last.a}`);
+  if (n && n.ended) return toast(`L'astreinte du dimanche est terminée (${hh(R().se)})`);
+  const k = ensureSun(), t = hm(new Date());
+  dim[k].p.push({ a: t }); saveD(); renderDim(); toast(`Arrivée à l'hôpital à ${t} ✓`);
+};
+$('db-leave').onclick = () => {
+  const n = activeSun();
+  if (!n || !n.atH) return toast("Pas d'arrivée à l'hôpital en cours");
+  const t = hm(new Date()); n.last.d = t; saveD(); renderDim();
+  toast(`Départ de l'hôpital à ${t}, +${R().t} min de trajet ✓`);
+};
+
+/* Dimanche : saisie manuelle */
+function sunManFieldsHtml(prefix, v){
+  return `<div class="field"><label for="${prefix}-home">Heures d'astreinte</label><input type="text" inputmode="decimal" id="${prefix}-home" value="${hoursIn(v.home)}" placeholder="5"></div>
+    <div class="field"><label for="${prefix}-hosp">Heures à l'hôpital</label><input type="text" inputmode="decimal" id="${prefix}-hosp" value="${hoursIn(v.hosp)}" placeholder="0"></div>`;
+}
+function readSunMan(prefix){ return { home: parseHours($(prefix + '-home').value), hosp: parseHours($(prefix + '-hosp').value) }; }
+function sunManSummary(v){
+  if ([v.home, v.hosp].some(x => isNaN(x))) return { eur: '—', note: '<span class="neg">Écris les heures comme 3, 3,5 ou 3h30.</span>' };
+  const c = calcSun('', { man: v });
+  return { eur: eur(c.total), note: `Astreinte complète = ${hoursTxt(R().se - R().ss)}. Les heures à l'hôpital s'ajoutent en plus.` };
+}
+function saveSunManual(k, v, replacing){
+  if (!k){ toast('Choisis la date'); return false; }
+  if ([v.home, v.hosp].some(x => isNaN(x))){ toast('Heures invalides'); return false; }
+  if (v.home + v.hosp <= 0){ toast('Indique au moins une durée'); return false; }
+  if (!replacing && dim[k] && !confirm(`Une astreinte existe déjà pour le ${sunLabel(k).toLowerCase()}. La remplacer ?`)) return false;
+  dim[k] = { man: { home: +v.home.toFixed(4), hosp: +v.hosp.toFixed(4) } };
+  saveD(); return true;
+}
+function updDMan(){ const s = sunManSummary(readSunMan('dman')); $('dman-eur').textContent = s.eur; $('dman-note').innerHTML = s.note; }
+$('db-manual').onclick = () => {
+  $('dman-box').style.display = '';
+  const d = new Date(); d.setDate(d.getDate() - d.getDay()); $('dman-date').value = ymd(d);
+  $('dman-fields').innerHTML = sunManFieldsHtml('dman', { home: R().se - R().ss });
+  ['dman-home', 'dman-hosp'].forEach(id => $(id).oninput = updDMan);
+  updDMan(); $('dman-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+$('dman-cancel').onclick = () => { $('dman-box').style.display = 'none'; };
+$('dman-ok').onclick = () => {
+  const k = $('dman-date').value;
+  if (!saveSunManual(k, readSunMan('dman'), false)) return;
+  $('dman-box').style.display = 'none'; toast('Dimanche ajouté ✓');
+  const d = parseYmd(k); amDate = new Date(d.getFullYear(), d.getMonth(), 1); edK = null;
+  show('astrhist');
+};
+
+/* ---------- Historique des astreintes ---------- */
+let amDate = new Date(); amDate.setDate(1);
+let edK = null, edKind = 'n', edP = [];
+$('am-prev').onclick = () => { amDate.setMonth(amDate.getMonth() - 1); edK = null; renderAstrHist(); };
+$('am-next').onclick = () => { amDate.setMonth(amDate.getMonth() + 1); edK = null; renderAstrHist(); };
+function monthNights(y, m){ const pre = `${y}-${pad(m+1)}-`; return Object.keys(astr).filter(k => k.startsWith(pre)).sort(); }
+function monthSuns(y, m){ const pre = `${y}-${pad(m+1)}-`; return Object.keys(dim).filter(k => k.startsWith(pre)).sort(); }
+function astrMonth(y, m){
+  const nights = monthNights(y, m), suns = monthSuns(y, m);
+  const N = { home: 0, h1: 0, h2: 0, total: 0 }, S = { home: 0, hosp: 0, total: 0 };
+  nights.forEach(k => { const c = calcNight(k, astr[k], false); N.home += c.home; N.h1 += c.h1; N.h2 += c.h2; N.total += c.total; });
+  suns.forEach(k => { const c = calcSun(k, dim[k], false); S.home += c.home; S.hosp += c.hosp; S.total += c.total; });
+  return { nights, suns, N, S, total: N.total + S.total };
+}
+function shortNight(k){
+  const a = parseYmd(k), b = addDays(a, 1);
+  if (a.getMonth() === b.getMonth()) return `Du ${a.getDate()} au ${b.getDate()}`;
+  const mo = d => d.toLocaleDateString('fr-FR', { month: 'short' });
+  return `Du ${a.getDate()} ${mo(a)} au ${b.getDate()} ${mo(b)}`;
+}
+const shortSun = k => capit(parseYmd(k).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' }));
+const hcell = m => m ? fmt(m) : '—';
+function openEntry(kind, k){
+  edKind = kind; edK = k;
+  const rec = (kind === 'n' ? astr : dim)[k];
+  edP = rec && rec.p ? rec.p.filter(x => x.a || x.d).map(x => ({ a: x.a, d: x.d })) : [];
+  const d = parseYmd(k); amDate = new Date(d.getFullYear(), d.getMonth(), 1);
+  if (!$('v-astrhist').classList.contains('on')) show('astrhist'); else renderAstrHist();
+  setTimeout(() => { const e = $('ah-edit'); if (e.firstChild) e.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+}
+const openNight = k => openEntry('n', k);
+const openSun = k => openEntry('s', k);
+function renderAstrHist(){
+  const r = R(), y = amDate.getFullYear(), m = amDate.getMonth(), T = astrMonth(y, m);
+  $('am-title').textContent = capit(monthName(amDate));
+  $('ah-c1').textContent = `CHU ${hh(r.s)}–${hh(r.m)}`;
+  $('ah-c2').textContent = `CHU ${hh(r.m)}–${hh(r.e)}`;
+  const tag = c => c.manual ? '<small>saisie manuelle</small>' : (c.issues ? '<small class="neg">incomplet</small>' : '');
+  $('ah-body').innerHTML = T.nights.length ? T.nights.map(k => {
+    const c = calcNight(k, astr[k], false);
+    return `<tr data-night="${k}" class="${edKind === 'n' && k === edK ? 'sel' : ''}"><td>${esc(shortNight(k))}${tag(c)}</td><td>${hcell(c.home)}</td><td>${hcell(c.h1)}</td><td>${hcell(c.h2)}</td></tr>`;
+  }).join('') : '<tr><td colspan="4" class="empty" style="text-align:center">Aucune nuit d\'astreinte ce mois-ci</td></tr>';
+  const N = T.N;
+  $('ah-foot').innerHTML = T.nights.length ? `
+    <tr><td>Total heures</td><td>${fmt(N.home)}</td><td>${fmt(N.h1)}</td><td>${fmt(N.h2)}</td></tr>
+    <tr class="eur"><td>Montant</td><td>${eur(N.home / 60 * r.h)}<small>× ${nb(r.h)} €/h</small></td><td>${eur(N.h1 / 60 * r.c1)}<small>× ${nb(r.c1)} €/h</small></td><td>${eur(N.h2 / 60 * r.c2)}<small>× ${nb(r.c2)} €/h</small></td></tr>
+    <tr class="grand"><td colspan="3">Total des nuits · ${T.nights.length} nuit${T.nights.length > 1 ? 's' : ''}</td><td>${eur(N.total)}</td></tr>` : '';
+  $('ahs-body').innerHTML = T.suns.length ? T.suns.map(k => {
+    const c = calcSun(k, dim[k], false);
+    return `<tr data-sun="${k}" class="${edKind === 's' && k === edK ? 'sel' : ''}"><td>${esc(shortSun(k))}${tag(c)}</td><td>${hcell(c.home)}</td><td>${hcell(c.hosp)}</td><td>${eur(c.total)}</td></tr>`;
+  }).join('') : '<tr><td colspan="4" class="empty" style="text-align:center">Aucun dimanche ce mois-ci</td></tr>';
+  const S = T.S;
+  $('ahs-foot').innerHTML = T.suns.length ? `
+    <tr><td>Total heures</td><td>${fmt(S.home)}</td><td>${fmt(S.hosp)}</td><td></td></tr>
+    <tr class="eur"><td>Montant</td><td>${eur(S.home / 60 * r.sh)}<small>× ${nb(r.sh)} €/h</small></td><td>${eur(S.hosp / 60 * r.sc)}<small>× ${nb(r.sc)} €/h</small></td><td>${eur(S.total)}</td></tr>` : '';
+  $('ah-total').innerHTML = `Total des astreintes de ${esc(monthName(amDate))}<b class="num">${eur(T.total)}</b>
+    <span class="sub">Nuits : ${eur(N.total)} · Dimanches : ${eur(S.total)}</span>`;
+  drawEdit();
+}
+$('ah-body').onclick = ev => { const tr = ev.target.closest('tr[data-night]'); if (tr) openNight(tr.dataset.night); };
+$('ahs-body').onclick = ev => { const tr = ev.target.closest('tr[data-sun]'); if (tr) openSun(tr.dataset.sun); };
+function drawEdit(){
+  const isN = edKind === 'n', store = isN ? astr : dim, box = $('ah-edit'), rec = edK && store[edK];
+  if (!rec){ box.innerHTML = ''; return; }
+  const label = isN ? nightLabel(edK) : sunLabel(edK), what = isN ? 'la nuit' : 'le dimanche', place = isN ? 'CHU' : "l'hôpital";
+  const saveStore = isN ? saveA : saveD, ord = isN ? offOf : toMin;
+  const btns = `<div class="actions"><button class="btn" id="ed-save">Enregistrer</button><button class="btn danger" id="ed-del">Supprimer</button></div>
+    <div class="actions" style="margin-top:8px"><button class="btn ghost" id="ed-close">Fermer</button></div>`;
+  if (rec.man){
+    box.innerHTML = `<h2>Corriger ${what}</h2><div class="card"><div class="note" style="margin:0 0 4px">${esc(label)} · saisie manuelle</div>
+      ${isN ? manFieldsHtml('ed', rec.man) : sunManFieldsHtml('ed', rec.man)}<div class="row total"><span class="k">Montant estimatif</span><span class="v num" id="ed-eur"></span></div>
+      <div class="note" id="ed-note" style="margin:4px 0 0"></div>${btns}</div>`;
+    const read = () => isN ? readMan('ed') : readSunMan('ed');
+    const upd = () => { const s = isN ? manSummary(read()) : sunManSummary(read()); $('ed-eur').textContent = s.eur; $('ed-note').innerHTML = s.note; };
+    box.querySelectorAll('input').forEach(i => i.oninput = upd); upd();
+    $('ed-save').onclick = () => { if ((isN ? saveManual : saveSunManual)(edK, read(), true)){ toast('Enregistré ✓'); renderAstrHist(); } };
+  } else {
+    box.innerHTML = `<h2>Corriger ${what}</h2><div class="card"><div class="note" style="margin:0 0 4px">${esc(label)}</div>
+      <div id="ed-pass"></div><button class="linkbtn" id="ed-add">+ Ajouter un passage ${isN ? 'au CHU' : "à l'hôpital"}</button>
+      <div class="note" style="margin:0 0 4px">Indique les heures réelles : les ${R().tb} min avant l'arrivée et ${R().t} min après le départ sont ajoutées automatiquement.</div>
+      ${btns}</div><div id="ed-calc"></div>`;
+    const drawCalc = () => {
+      const p = edP.filter(x => x.a || x.d);
+      $('ed-calc').innerHTML = isN ? breakdownHtml(calcNight(edK, { p }, false), 'Calcul de cette nuit') : sunBreakdownHtml(calcSun(edK, { p }, false), 'Calcul de ce dimanche');
+    };
+    const drawPass = () => {
+      $('ed-pass').innerHTML = edP.map((x, i) => `<div class="pass" data-i="${i}">
+        <div class="pass-head"><b>Passage ${isN ? 'au CHU' : "à l'hôpital"} ${i + 1}</b><button data-del="${i}">Supprimer</button></div>
+        <div class="field"><label>Arrivée</label><input type="time" data-f="a" value="${x.a || ''}"></div>
+        <div class="field"><label>Départ</label><input type="time" data-f="d" value="${x.d || ''}"></div></div>`).join('')
+        || `<div class="note" style="margin:6px 0 0">Aucun passage ${isN ? 'au CHU' : "à l'hôpital"} : astreinte entière à domicile.</div>`;
+      $('ed-pass').querySelectorAll('input').forEach(inp => inp.oninput = () => {
+        const i = +inp.closest('.pass').dataset.i; edP[i][inp.dataset.f] = inp.value || undefined; drawCalc(); });
+      $('ed-pass').querySelectorAll('[data-del]').forEach(b => b.onclick = () => { edP.splice(+b.dataset.del, 1); drawPass(); drawCalc(); });
+    };
+    drawPass(); drawCalc();
+    $('ed-add').onclick = () => { edP.push({}); drawPass(); drawCalc(); };
+    $('ed-save').onclick = () => {
+      const p = edP.filter(x => x.a || x.d).map(x => { const n = {}; if (x.a) n.a = x.a; if (x.d) n.d = x.d; return n; })
+        .sort((x, y) => ord(x.a || x.d) - ord(y.a || y.d));
+      if (p.find(x => x.a && x.d && ord(x.d) < ord(x.a))) return toast("Un départ est avant l'arrivée");
+      store[edK] = isN ? { st: rec.st || clock(R().s * 60), p } : { p };
+      saveStore(); toast('Enregistré ✓'); openEntry(edKind, edK);
+    };
+  }
+  $('ed-del').onclick = () => {
+    if (!confirm(`Supprimer l'astreinte : ${label.toLowerCase()} ?`)) return;
+    delete store[edK]; edK = null; saveStore(); renderAstrHist(); toast('Astreinte supprimée');
+  };
+  $('ed-close').onclick = () => { edK = null; renderAstrHist(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+}
+
+/* ---------- Bilan mensuel par e-mail ---------- */
+function buildMonthMail(y, m){
+  const d0 = new Date(y, m, 1), mois = monthName(d0);
+  const ks = monthKeys(y, m), s = summarize(ks);
+  const L = [];
+  L.push(`Bonjour ${settings.name || ''},`.replace(' ,', ','), '');
+  L.push(`Voici le récapitulatif de vos horaires du mois de ${mois}. Vous avez travaillé ce mois ${fmt(s.total)} (${s.days} jour${s.days > 1 ? 's' : ''} travaillé${s.days > 1 ? 's' : ''}).`, '');
+  const sup = Math.round(s.sup);
+  if (sup >= 0) L.push(`Vous avez effectué ${sup} minutes supplémentaires sur le mois (soit ${fmt(sup)}), sur une base de ${nb(settings.std)} h par jour.`);
+  else L.push(`Sur le mois, il manque ${-sup} minutes par rapport à la base de ${nb(settings.std)} h par jour (soit ${fmt(sup)}).`);
+  L.push('', 'DÉTAIL DES JOURNÉES TRAVAILLÉES', 'Date        | Horaires       | Heures', '------------+----------------+--------');
+  ks.filter(k => data[k]).forEach(k => {
+    const e = data[k], dd = parseYmd(k), m2 = dur(e);
+    const date = capit(dd.toLocaleDateString('fr-FR', { weekday: 'short' })).replace('.', '') + ' ' + pad(dd.getDate()) + '/' + pad(dd.getMonth() + 1);
+    L.push(`${date.padEnd(11)} | ${(e.a || '--:--')} → ${(e.d || '--:--')}  | ${m2 == null ? 'incomplet' : fmt(m2)}`);
+  });
+  if (!s.days && !s.incomplete) L.push('Aucune journée enregistrée.');
+  L.push('------------+----------------+--------', `TOTAL       |                | ${fmt(s.total)}`);
+  if (s.incomplete) L.push('', `Attention : ${s.incomplete} journée(s) incomplète(s) non comptée(s) dans le total.`);
+  const T = astrMonth(y, m), r = R();
+  if (T.nights.length){
+    L.push('', 'ASTREINTES DE NUIT', `Date | Domicile | CHU ${hh(r.s)}-${hh(r.m)} | CHU ${hh(r.m)}-${hh(r.e)} | Montant`);
+    T.nights.forEach(k => { const c = calcNight(k, astr[k], false); L.push(`${nightLabel(k)} | ${fmt(c.home)} | ${fmt(c.h1)} | ${fmt(c.h2)} | ${eur(c.total)}`); });
+    L.push(`Total heures | ${fmt(T.N.home)} | ${fmt(T.N.h1)} | ${fmt(T.N.h2)} |`);
+    L.push(`Montant | ${eur(T.N.home / 60 * r.h)} | ${eur(T.N.h1 / 60 * r.c1)} | ${eur(T.N.h2 / 60 * r.c2)} | ${eur(T.N.total)}`);
+  }
+  if (T.suns.length){
+    L.push('', 'ASTREINTES DU DIMANCHE', "Date | Astreinte | Hôpital (en plus) | Montant");
+    T.suns.forEach(k => { const c = calcSun(k, dim[k], false); L.push(`${sunLabel(k)} | ${fmt(c.home)} | ${fmt(c.hosp)} | ${eur(c.total)}`); });
+    L.push(`Total heures | ${fmt(T.S.home)} | ${fmt(T.S.hosp)} |`);
+    L.push(`Montant | ${eur(T.S.home / 60 * r.sh)} | ${eur(T.S.hosp / 60 * r.sc)} | ${eur(T.S.total)}`);
+  }
+  if (T.nights.length || T.suns.length) L.push('', `TOTAL DES ASTREINTES DU MOIS : ${eur(T.total)}`);
+  L.push('', 'Envoyé depuis l’appli Pointage.');
+  return { subject: `Récapitulatif des horaires – ${capit(mois)}`, body: L.join('\r\n') };
+}
+function sendMonthMail(y, m){
+  if (!settings.mail) { toast("Indique l'adresse e-mail dans Paramètres"); return show('set'); }
+  const { subject, body } = buildMonthMail(y, m);
+  location.href = `mailto:${encodeURIComponent(settings.mail).replace('%40', '@')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  settings.lastMail = `${y}-${pad(m+1)}`; saveSettings(); renderMailBanner();
+}
+let bannerHidden = false;
+function renderMailBanner(){
+  const box = $('mail-banner'); const now = new Date();
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1), pk = `${prev.getFullYear()}-${pad(prev.getMonth()+1)}`;
+  const due = now >= new Date(now.getFullYear(), now.getMonth(), 1, 20, 0);
+  const hasData = monthKeys(prev.getFullYear(), prev.getMonth()).some(k => data[k]) || monthNights(prev.getFullYear(), prev.getMonth()).length || monthSuns(prev.getFullYear(), prev.getMonth()).length;
+  if (!settings.mailOn || !settings.mail || !due || settings.lastMail === pk || !hasData || bannerHidden){ box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="banner"><b>Le bilan de ${esc(monthName(prev))} est prêt</b><span class="sub">À envoyer à ${esc(settings.mail)}</span>
+    <div class="actions"><button class="btn" id="mb-send">Envoyer</button><button class="btn ghost" id="mb-later">Plus tard</button></div></div>`;
+  $('mb-send').onclick = () => sendMonthMail(prev.getFullYear(), prev.getMonth());
+  $('mb-later').onclick = () => { bannerHidden = true; renderMailBanner(); };
+}
+
+/* ---------- Paramètres ---------- */
+const RATE_FIELDS = [
+  ['s', 'Nuit : début', 'time'], ['m', 'Nuit : changement de tarif', 'time'], ['e', 'Nuit : fin le lendemain', 'time'],
+  ['h', 'Nuit : domicile (€/h)'], ['c1', 'Nuit : CHU avant changement (€/h)'], ['c2', 'Nuit : CHU après changement (€/h)'],
+  ['ss', 'Dimanche : début', 'time'], ['se', 'Dimanche : fin', 'time'],
+  ['sh', 'Dimanche : astreinte (€/h)'], ['sc', 'Dimanche : hôpital (€/h)'],
+  ['tb', 'Minutes ajoutées avant l’arrivée'], ['t', 'Minutes ajoutées après le départ']
+];
+function renderSet(){
+  renderSync();
+  $('s-std').value = nb(settings.std);
+  $('s-name').value = settings.name || ''; $('s-mail').value = settings.mail || ''; $('s-mailon').checked = !!settings.mailOn;
+  $('s-astr').innerHTML = RATE_FIELDS.map(([k, l, ty]) => ty === 'time'
+    ? `<div class="field"><label for="r-${k}">${l}</label><input type="time" id="r-${k}" data-r="${k}" data-t="1" value="${clock(Math.round(settings.rates[k] * 60))}"></div>`
+    : `<div class="field"><label for="r-${k}">${l}</label><input type="text" inputmode="decimal" id="r-${k}" data-r="${k}" value="${nb(settings.rates[k])}"></div>`).join('');
+  $('s-astr').querySelectorAll('input').forEach(inp => inp.onchange = () => {
+    const k = inp.dataset.r, isT = !!inp.dataset.t;
+    const v = isT ? (inp.value ? toMin(inp.value) / 60 : NaN) : parseFloat(inp.value.replace(',', '.'));
+    const rr = Object.assign({}, settings.rates, { [k]: v });
+    const ok = isT ? (rr.s >= 12 && rr.e < 12 && rr.ss < rr.se) : (v >= 0 && v <= 1000);
+    if (!ok){ toast(isT ? 'Heure invalide (nuit : début le soir, fin le matin)' : 'Valeur invalide'); return renderSet(); }
+    settings.rates[k] = v; saveSettings(); toast('Tarif enregistré ✓');
+  });
+  $('s-last').textContent = settings.lastExport ? `Dernière sauvegarde : ${new Date(settings.lastExport).toLocaleDateString('fr-FR')}` : 'Aucune sauvegarde faite pour le moment.';
+  $('s-about').textContent = `${Object.keys(data).length} journée(s), ${Object.keys(astr).length} nuit(s) d'astreinte et ${Object.keys(dim).length} dimanche(s) enregistrés sur ce téléphone.`;
+}
+$('s-std').onchange = () => {
+  const v = parseFloat($('s-std').value.replace(',', '.'));
+  if (!(v > 0 && v <= 24)){ toast('Valeur invalide'); return renderSet(); }
+  settings.std = v; saveSettings(); toast('Réglage enregistré ✓');
+};
+$('s-name').onchange = () => { settings.name = $('s-name').value.trim(); saveSettings(); toast('Prénom enregistré ✓'); };
+$('s-mail').onchange = () => { settings.mail = $('s-mail').value.trim(); saveSettings(); toast('Adresse enregistrée ✓'); };
+$('s-mailon').onchange = () => { settings.mailOn = $('s-mailon').checked; saveSettings(); };
+$('s-export').onclick = async () => {
+  const json = JSON.stringify({ app: 'pointage', version: 4, settings: { std: settings.std, name: settings.name, mail: settings.mail, rates: settings.rates }, data, astreintes: astr, dimanches: dim }, null, 1);
+  const name = `pointage-${ymd(new Date())}.json`;
+  const file = new File([json], name, { type: 'application/json' });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file], title: 'Sauvegarde pointage' }); }
+    else { const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000); }
+    settings.lastExport = Date.now(); saveSettings(); renderSet();
+  } catch(e){ if (e.name !== 'AbortError') toast("La sauvegarde n'a pas pu être créée"); }
+};
+$('s-import').onclick = () => $('s-file').click();
+$('s-file').onchange = async () => {
+  const f = $('s-file').files[0]; if (!f) return;
+  try {
+    const obj = JSON.parse(await f.text()); const d = obj.data || obj;
+    const keys = Object.keys(d).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k));
+    const akeys = obj.astreintes ? Object.keys(obj.astreintes).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)) : [];
+    const dkeys = obj.dimanches ? Object.keys(obj.dimanches).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)) : [];
+    if (!keys.length && !akeys.length && !dkeys.length) throw new Error();
+    if (!confirm(`Restaurer ${keys.length} journée(s), ${akeys.length} nuit(s) d'astreinte et ${dkeys.length} dimanche(s) ? Les jours déjà présents seront remplacés par ceux de la sauvegarde.`)) return;
+    const okT = t => /^\d{2}:\d{2}$/.test(t || '');
+    keys.forEach(k => { const e = d[k], n = {}; if (okT(e.a)) n.a = e.a; if (okT(e.d)) n.d = e.d; if (n.a || n.d) data[k] = n; });
+    akeys.forEach(k => { const e = obj.astreintes[k];
+      const okN = x => typeof x === 'number' && x >= 0;
+      if (e.man && okN(e.man.home) && okN(e.man.h1) && okN(e.man.h2)) astr[k] = { st: '20:00', man: { home: e.man.home, h1: e.man.h1, h2: e.man.h2 } };
+      else astr[k] = { st: okT(e.st) ? e.st : '20:00',
+        p: (e.p || []).map(x => { const n = {}; ['a','d'].forEach(f => { if (okT(x[f])) n[f] = x[f]; }); return n; }).filter(x => x.a || x.d) }; });
+    dkeys.forEach(k => { const e = obj.dimanches[k], okN = x => typeof x === 'number' && x >= 0;
+      if (e.man && okN(e.man.home) && okN(e.man.hosp)) dim[k] = { man: { home: e.man.home, hosp: e.man.hosp } };
+      else dim[k] = { p: (e.p || []).map(x => { const n = {}; ['a','d'].forEach(f => { if (okT(x[f])) n[f] = x[f]; }); return n; }).filter(x => x.a || x.d) }; });
+    if (obj.settings){ if (obj.settings.std > 0) settings.std = obj.settings.std;
+      ['name','mail'].forEach(f => { if (typeof obj.settings[f] === 'string') settings[f] = obj.settings[f]; });
+      if (obj.settings.rates) settings.rates = Object.assign({}, DEF_RATES, obj.settings.rates); }
+    if (obj.settings && obj.settings.rates) settings.setupDone = true;
+    save(); saveA(); saveD(); saveSettings(); render(); toast('Sauvegarde restaurée ✓');
+    if ($('setup').classList.contains('on') && settings.setupDone) closeSetup();
+  } catch(e){ toast("Ce fichier n'est pas une sauvegarde valide"); }
+  $('s-file').value = '';
+};
+
+/* ---------- Export Excel (.xlsx) ----------
+   Fichier Excel fabriqué directement dans le téléphone (aucun service extérieur). */
+const XS = { txt: 0, head: 1, date: 2, dur: 3, eur: 4, sign: 5, time: 6, btxt: 7, bdur: 8, beur: 9, bsign: 10, num: 11, bnum: 12 };
+const xEsc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const xDate = k => { const [y, m, d] = k.split('-').map(Number); return (Date.UTC(y, m-1, d) - Date.UTC(1899, 11, 30)) / 864e5; };
+const xMin = m => m / 1440;
+function xCol(i){ let s = ''; i++; while (i){ const r = (i - 1) % 26; s = String.fromCharCode(65 + r) + s; i = Math.floor((i - 1) / 26); } return s; }
+function xSheet(sh){
+  const rows = sh.rows.map((row, r) => `<row r="${r+1}">` + row.map((c, i) => {
+    if (c == null || c === '') return '';
+    const cell = typeof c === 'object' ? c : { v: c }, ref = xCol(i) + (r + 1), s = cell.s || 0;
+    return typeof cell.v === 'number' ? `<c r="${ref}" s="${s}"><v>${cell.v}</v></c>`
+      : `<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${xEsc(cell.v)}</t></is></c>`;
+  }).join('') + '</row>').join('');
+  const cols = sh.widths.map((w, i) => `<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${cols}</cols><sheetData>${rows}</sheetData></worksheet>`;
+}
+const crcTable = (() => { const t = []; for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b){ let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = crcTable[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStore(files){
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  files.forEach(f => {
+    const name = enc.encode(f.name), data = enc.encode(f.data), crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint16(10, 0, true); h.setUint16(12, 0x21, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true);
+    h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+    parts.push(new Uint8Array(h.buffer), name, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true);
+    c.setUint16(10, 0, true); c.setUint16(12, 0, true); c.setUint16(14, 0x21, true); c.setUint32(16, crc, true);
+    c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true);
+    c.setUint32(42, off, true);
+    central.push(new Uint8Array(c.buffer), name);
+    off += 30 + name.length + data.length;
+  });
+  const cSize = central.reduce((a, b) => a + b.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true);
+  e.setUint32(12, cSize, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+function buildXlsx(sheets){
+  const xf = (fmt, font, fill) => `<xf numFmtId="${fmt}" fontId="${font}" fillId="${fill}" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1"/>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="5"><numFmt numFmtId="164" formatCode="dd/mm/yyyy"/><numFmt numFmtId="165" formatCode="[h]:mm"/><numFmt numFmtId="166" formatCode="#,##0.00&quot; €&quot;"/><numFmt numFmtId="167" formatCode="+0;-0;0"/><numFmt numFmtId="168" formatCode="hh:mm"/></numFmts>
+<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>
+<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDCE6F5"/><bgColor indexed="64"/></patternFill></fill></fills>
+<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="13">${[xf(0,0,0), xf(0,1,2), xf(164,0,0), xf(165,0,0), xf(166,0,0), xf(167,0,0), xf(168,0,0), xf(0,1,0), xf(165,1,0), xf(166,1,0), xf(167,1,0), xf(0,0,0), xf(0,1,0)].join('')}</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  const files = [
+    { name: '[Content_Types].xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>` },
+    { name: '_rels/.rels', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+    { name: 'xl/workbook.xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s, i) => `<sheet name="${xEsc(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>` },
+    { name: 'xl/_rels/workbook.xml.rels', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_, i) => `<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+    { name: 'xl/styles.xml', data: styles },
+    ...sheets.map((s, i) => ({ name: `xl/worksheets/sheet${i+1}.xml`, data: xSheet(s) }))
+  ];
+  return zipStore(files);
+}
+async function shareFile(blob, name, title){
+  const file = new File([blob], name, { type: blob.type });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file], title }); }
+    else { const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+    return true;
+  } catch(e){ if (e.name !== 'AbortError') toast("Le fichier n'a pas pu être créé"); return false; }
+}
+const H = s => ({ v: s, s: XS.head });
+
+function daysWorkbook(){
+  const keys = Object.keys(data).sort(), base = stdMin();
+  const jours = { name: 'Journées', widths: [12, 11, 9, 9, 15, 14], rows: [[H('Date'), H('Jour'), H('Arrivée'), H('Départ'), H('Temps travaillé'), H('Minutes sup')]] };
+  keys.forEach(k => {
+    const e = data[k], m = dur(e);
+    jours.rows.push([{ v: xDate(k), s: XS.date }, capit(parseYmd(k).toLocaleDateString('fr-FR', { weekday: 'long' })),
+      e.a ? { v: xMin(toMin(e.a)), s: XS.time } : '', e.d ? { v: xMin(toMin(e.d)), s: XS.time } : '',
+      m == null ? 'incomplet' : { v: xMin(m), s: XS.dur }, m == null ? '' : { v: m - base, s: XS.sign }]);
+  });
+  const all = summarize(keys);
+  jours.rows.push(['', '', '', '', '', ''], [{ v: 'Total', s: XS.btxt }, { v: `${all.days} jours`, s: XS.btxt }, '', '', { v: xMin(all.total), s: XS.bdur }, { v: Math.round(all.sup), s: XS.bsign }]);
+  const sem = { name: 'Par semaine', widths: [8, 10, 12, 12, 8, 15, 14], rows: [[H('Année'), H('Semaine'), H('Du'), H('Au'), H('Jours'), H('Temps travaillé'), H('Minutes sup')]] };
+  const seen = new Set();
+  keys.forEach(k => { const { y, w } = isoWeek(parseYmd(k)); const id = `${y}-${w}`; if (seen.has(id)) return; seen.add(id);
+    const mon = isoMonday(y, w), s = summarize([...Array(7)].map((_, i) => ymd(addDays(mon, i))));
+    sem.rows.push([{ v: y, s: XS.num }, { v: w, s: XS.num }, { v: xDate(ymd(mon)), s: XS.date }, { v: xDate(ymd(addDays(mon, 6))), s: XS.date },
+      { v: s.days, s: XS.num }, { v: xMin(s.total), s: XS.dur }, { v: Math.round(s.sup), s: XS.sign }]); });
+  const mois = { name: 'Par mois', widths: [18, 8, 15, 14], rows: [[H('Mois'), H('Jours'), H('Temps travaillé'), H('Minutes sup')]] };
+  [...new Set(keys.map(k => k.slice(0, 7)))].forEach(mk => { const [y, m] = mk.split('-').map(Number), s = summarize(monthKeys(y, m - 1));
+    mois.rows.push([capit(monthName(new Date(y, m - 1, 1))), { v: s.days, s: XS.num }, { v: xMin(s.total), s: XS.dur }, { v: Math.round(s.sup), s: XS.sign }]); });
+  const years = [...new Set(keys.map(k => k.slice(0, 4)))];
+  mois.rows.push(['', '', '', '']);
+  years.forEach(y => { const s = summarize(keys.filter(k => k.startsWith(y)));
+    mois.rows.push([{ v: `Total ${y}`, s: XS.btxt }, { v: s.days, s: XS.bnum }, { v: xMin(s.total), s: XS.bdur }, { v: Math.round(s.sup), s: XS.bsign }]); });
+  return [jours, sem, mois];
+}
+function astrWorkbook(){
+  const r = R(), nk = Object.keys(astr).sort(), sk = Object.keys(dim).sort();
+  const c1 = `CHU ${hh(r.s)}-${hh(r.m)}`, c2 = `CHU ${hh(r.m)}-${hh(r.e)}`;
+  const nuits = { name: 'Nuits', widths: [28, 12, 15, 15, 15, 17, 18, 34],
+    rows: [[H("Date de l'astreinte"), H('Début'), H('Temps à domicile'), H(c1), H(c2), H('Montant estimatif'), H('Type'), H('Passages au CHU')]] };
+  const N = { home: 0, h1: 0, h2: 0, eur: 0 };
+  nk.forEach(k => {
+    const rec = astr[k], c = calcNight(k, rec, false);
+    N.home += c.home; N.h1 += c.h1; N.h2 += c.h2; N.eur += c.total;
+    const pass = rec.man ? '' : (rec.p || []).filter(x => x.a || x.d).map(x => `${x.a || '?'} → ${x.d || '?'}`).join(' ; ');
+    nuits.rows.push([nightLabel(k), { v: xDate(k), s: XS.date }, { v: xMin(c.home), s: XS.dur }, { v: xMin(c.h1), s: XS.dur }, { v: xMin(c.h2), s: XS.dur },
+      { v: Math.round(c.total * 100) / 100, s: XS.eur }, rec.man ? 'Saisie manuelle' : 'Pointée' + (c.issues ? ' (incomplète)' : ''), pass]);
+  });
+  nuits.rows.push(['', '', '', '', '', '', '', ''],
+    [{ v: 'Total heures', s: XS.btxt }, '', { v: xMin(N.home), s: XS.bdur }, { v: xMin(N.h1), s: XS.bdur }, { v: xMin(N.h2), s: XS.bdur }, '', '', ''],
+    [{ v: 'Montant', s: XS.btxt }, '', { v: Math.round(N.home / 60 * r.h * 100) / 100, s: XS.beur }, { v: Math.round(N.h1 / 60 * r.c1 * 100) / 100, s: XS.beur },
+      { v: Math.round(N.h2 / 60 * r.c2 * 100) / 100, s: XS.beur }, { v: Math.round(N.eur * 100) / 100, s: XS.beur }, '', '']);
+  const dims = { name: 'Dimanches', widths: [30, 12, 15, 16, 17, 18, 34],
+    rows: [[H('Date'), H('Date (jj/mm/aaaa)'), H("Temps d'astreinte"), H("Temps à l'hôpital (en plus)"), H('Montant estimatif'), H('Type'), H("Passages à l'hôpital")]] };
+  const S = { home: 0, hosp: 0, eur: 0 };
+  sk.forEach(k => {
+    const rec = dim[k], c = calcSun(k, rec, false);
+    S.home += c.home; S.hosp += c.hosp; S.eur += c.total;
+    const pass = rec.man ? '' : (rec.p || []).filter(x => x.a || x.d).map(x => `${x.a || '?'} → ${x.d || '?'}`).join(' ; ');
+    dims.rows.push([sunLabel(k), { v: xDate(k), s: XS.date }, { v: xMin(c.home), s: XS.dur }, { v: xMin(c.hosp), s: XS.dur },
+      { v: Math.round(c.total * 100) / 100, s: XS.eur }, rec.man ? 'Saisie manuelle' : 'Pointée' + (c.issues ? ' (incomplète)' : ''), pass]);
+  });
+  dims.rows.push(['', '', '', '', '', '', ''],
+    [{ v: 'Total heures', s: XS.btxt }, '', { v: xMin(S.home), s: XS.bdur }, { v: xMin(S.hosp), s: XS.bdur }, '', '', ''],
+    [{ v: 'Montant', s: XS.btxt }, '', { v: Math.round(S.home / 60 * r.sh * 100) / 100, s: XS.beur }, { v: Math.round(S.hosp / 60 * r.sc * 100) / 100, s: XS.beur },
+      { v: Math.round(S.eur * 100) / 100, s: XS.beur }, '', '']);
+  const mois = { name: 'Par mois', widths: [18, 8, 15, 15, 15, 15, 11, 15, 16, 17, 16],
+    rows: [[H('Mois'), H('Nuits'), H('Nuits : domicile'), H(c1), H(c2), H('Montant nuits'), H('Dimanches'), H('Dim. : astreinte'), H('Dim. : hôpital'), H('Montant dimanches'), H('Total du mois')]] };
+  [...new Set([...nk, ...sk].map(k => k.slice(0, 7)))].sort().forEach(mk => {
+    const [y, m] = mk.split('-').map(Number), T = astrMonth(y, m - 1), e = v => ({ v: Math.round(v * 100) / 100, s: XS.eur });
+    mois.rows.push([capit(monthName(new Date(y, m - 1, 1))), { v: T.nights.length, s: XS.num }, { v: xMin(T.N.home), s: XS.dur }, { v: xMin(T.N.h1), s: XS.dur },
+      { v: xMin(T.N.h2), s: XS.dur }, e(T.N.total), { v: T.suns.length, s: XS.num }, { v: xMin(T.S.home), s: XS.dur }, { v: xMin(T.S.hosp), s: XS.dur },
+      e(T.S.total), { v: Math.round(T.total * 100) / 100, s: XS.beur }]);
+  });
+  const tarifs = { name: 'Tarifs', widths: [38, 14], rows: [[H('Paramètre'), H('Valeur')],
+    ['Nuit : horaires', `${hh(r.s)} → ${hh(r.e)} le lendemain`],
+    ['Nuit : domicile (€/h)', { v: r.h, s: XS.eur }], [`Nuit : ${c1} (€/h)`, { v: r.c1, s: XS.eur }], [`Nuit : ${c2} (€/h)`, { v: r.c2, s: XS.eur }],
+    ['Dimanche : horaires', `${hh(r.ss)} → ${hh(r.se)}`],
+    ['Dimanche : astreinte (€/h)', { v: r.sh, s: XS.eur }], ["Dimanche : hôpital (€/h)", { v: r.sc, s: XS.eur }],
+    ['Minutes ajoutées avant chaque arrivée', { v: r.tb, s: XS.num }], ['Minutes ajoutées après chaque départ', { v: r.t, s: XS.num }]] };
+  return [nuits, dims, mois, tarifs];
+}
+$('x-days').onclick = () => {
+  if (!Object.keys(data).length) return toast('Aucune journée à exporter');
+  shareFile(buildXlsx(daysWorkbook()), `horaires-${ymd(new Date())}.xlsx`, 'Horaires de travail');
+};
+$('x-astr').onclick = () => {
+  if (!Object.keys(astr).length && !Object.keys(dim).length) return toast('Aucune astreinte à exporter');
+  shareFile(buildXlsx(astrWorkbook()), `astreintes-${ymd(new Date())}.xlsx`, 'Astreintes');
+};
+
+/* ---------- Premier lancement : réglages personnels ---------- */
+const RATE_ASK = [['h', 'n'], ['c1', 'n'], ['c2', 'n'], ['sh', 's'], ['sc', 's']];
+function rateLabel(k){
+  const r = R();
+  return { h: 'À domicile', c1: `CHU ${hh(r.s)}–${hh(r.m)}`, c2: `CHU ${hh(r.m)}–${hh(r.e)}`, sh: 'Astreinte', sc: "À l'hôpital (en plus)" }[k] + ' (€/h)';
+}
+function openSetup(){
+  const r = R();
+  $('su-name').value = settings.name || ''; $('su-mail').value = settings.mail || ''; $('su-std').value = nb(settings.std);
+  $('su-night').textContent = `Astreinte de nuit (${hh(r.s)} → ${hh(r.e)})`;
+  $('su-sun').textContent = `Astreinte du dimanche (${hh(r.ss)} → ${hh(r.se)})`;
+  ['n', 's'].forEach(g => {
+    $('su-' + g).innerHTML = RATE_ASK.filter(x => x[1] === g).map(([k]) =>
+      `<div class="field"><label for="su-r-${k}">${rateLabel(k)}</label><input type="text" inputmode="decimal" id="su-r-${k}" placeholder="ex. 12,50"></div>`).join('');
+  });
+  $('su-login-row').style.display = syncOn() && !auth ? '' : 'none';
+  $('su-err').textContent = '';
+  $('setup').classList.add('on'); document.body.classList.add('ov');
+}
+function closeSetup(){ $('setup').classList.remove('on'); if (!$('acct').classList.contains('on')) document.body.classList.remove('ov'); render(); }
+$('su-none').onchange = () => { $('su-rates').style.opacity = $('su-none').checked ? .4 : 1; $('su-rates').querySelectorAll('input').forEach(i => i.disabled = $('su-none').checked); };
+$('su-login').onclick = () => openAcct('login');
+$('su-file').onclick = () => $('s-file').click();
+$('su-go').onclick = () => {
+  const err = m => { $('su-err').textContent = m; $('su-err').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+  const mail = $('su-mail').value.trim(), std = parseFloat($('su-std').value.replace(',', '.'));
+  if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return err("L'adresse e-mail n'est pas valide (tu peux aussi la laisser vide).");
+  if (!(std > 0 && std <= 24)) return err('Indique le nombre d’heures d’une journée normale (ex. 10).');
+  const rates = {};
+  if ($('su-none').checked) RATE_ASK.forEach(([k]) => rates[k] = 0);
+  else for (const [k] of RATE_ASK){
+    const v = parseFloat(($('su-r-' + k).value || '').replace(',', '.').replace('€', '').trim());
+    if (!(v > 0 && v < 1000)) return err(`Indique le tarif « ${rateLabel(k)} », ou coche « Je ne fais pas d'astreintes ».`);
+    rates[k] = v;
+  }
+  settings.name = $('su-name').value.trim(); settings.mail = mail; settings.mailOn = !!mail; settings.std = std;
+  Object.assign(settings.rates, rates); settings.setupDone = true; saveSettings();
+  closeSetup(); toast("C'est prêt ✓");
+};
+
+/* ---------- Sauvegarde en ligne (Firebase : compte e-mail + mot de passe) ----------
+   Chaque personne a son propre compte. Les données de la personne sont rangées dans
+   un seul document « users/<son identifiant> », que seul son compte peut lire ou modifier. */
+const FB = { apiKey: 'AIzaSyB8exkKhZ_UCUNUUkquYJphkwNaDQKne2s', projectId: 'pointage-chu' };
+const syncOn = () => !!(FB.apiKey && FB.projectId);
+const AUTHK = 'pointage.auth', SYNCK = 'pointage.sync';
+var auth = load(AUTHK, null), syncSt = load(SYNCK, { dirty: false, remoteAt: 0, lastSync: 0, err: '' });
+var pushT = null, syncing = false, applying = false;
+function saveAuth(){ try{ auth ? localStorage.setItem(AUTHK, JSON.stringify(auth)) : localStorage.removeItem(AUTHK); }catch(e){} }
+function saveSync(){ try{ localStorage.setItem(SYNCK, JSON.stringify(syncSt)); }catch(e){} }
+function markDirty(){
+  if (applying || !auth || !syncOn()) return;
+  syncSt.dirty = true; saveSync();
+  clearTimeout(pushT); pushT = setTimeout(syncNow, 1500);
+}
+const hasLocal = () => !!(Object.keys(data).length || Object.keys(astr).length || Object.keys(dim).length);
+const SYNC_SET = ['std', 'name', 'mail', 'mailOn', 'rates', 'ratesV', 'setupDone'];
+function snapshot(){ const s = {}; SYNC_SET.forEach(k => s[k] = settings[k]); return { v: 1, data, astr, dim, settings: s }; }
+function applyRemote(p, merge){
+  applying = true;
+  try {
+    if (merge){
+      data = Object.assign({}, p.data || {}, data); astr = Object.assign({}, p.astr || {}, astr); dim = Object.assign({}, p.dim || {}, dim);
+    } else { data = p.data || {}; astr = p.astr || {}; dim = p.dim || {}; }
+    if ((!merge || !settings.setupDone) && p.settings){
+      SYNC_SET.forEach(k => { if (p.settings[k] !== undefined) settings[k] = p.settings[k]; });
+      settings.rates = Object.assign({}, DEF_RATES, settings.rates || {});
+    }
+    save(); saveA(); saveD(); saveSettings();
+  } finally { applying = false; }
+}
+const FBERR = {
+  EMAIL_EXISTS: 'Un compte existe déjà avec cette adresse : utilise « Me connecter ».',
+  INVALID_LOGIN_CREDENTIALS: 'E-mail ou mot de passe incorrect.', INVALID_PASSWORD: 'E-mail ou mot de passe incorrect.',
+  EMAIL_NOT_FOUND: 'E-mail ou mot de passe incorrect.', INVALID_EMAIL: "L'adresse e-mail n'est pas valide.",
+  MISSING_PASSWORD: 'Indique ton mot de passe.', USER_DISABLED: 'Ce compte a été désactivé.',
+  TOO_MANY_ATTEMPTS_TRY_LATER: 'Trop de tentatives : réessaie dans quelques minutes.',
+  OPERATION_NOT_ALLOWED: "La connexion par e-mail n'est pas activée dans Firebase.",
+  PERMISSION_DENIED: 'Accès refusé par le serveur (règles Firestore).',
+  NET: 'Pas de connexion internet : la sauvegarde se fera plus tard.'
+};
+const errMsg = e => { const c = String(e && e.message || e).split(' ')[0].replace(/[:,].*$/, ''); return FBERR[c] || (c.startsWith('WEAK_PASSWORD') ? 'Mot de passe trop faible (8 caractères minimum).' : 'Erreur : ' + c); };
+async function fbCall(url, opt){
+  let r;
+  try { r = await fetch(url, opt); } catch(e){ throw new Error('NET'); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok){ const e = new Error((j.error && (j.error.status === 'PERMISSION_DENIED' ? 'PERMISSION_DENIED' : j.error.message)) || 'HTTP_' + r.status); e.status = r.status; throw e; }
+  return j;
+}
+const fbPost = (url, body) => fbCall(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+const IDT = m => `https://identitytoolkit.googleapis.com/v1/accounts:${m}?key=${encodeURIComponent(FB.apiKey)}`;
+function setAuth(j){ auth = { email: j.email, uid: j.localId, idToken: j.idToken, refreshToken: j.refreshToken, exp: Date.now() + ((+j.expiresIn || 3600) - 120) * 1000 }; saveAuth(); }
+async function idToken(){
+  if (!auth) throw new Error('NO_AUTH');
+  if (Date.now() < auth.exp) return auth.idToken;
+  const j = await fbCall(`https://securetoken.googleapis.com/v1/token?key=${encodeURIComponent(FB.apiKey)}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: auth.refreshToken }).toString() });
+  auth.idToken = j.id_token; auth.refreshToken = j.refresh_token; auth.exp = Date.now() + ((+j.expires_in || 3600) - 120) * 1000; saveAuth();
+  return auth.idToken;
+}
+const docUrl = () => `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(FB.projectId)}/databases/(default)/documents/users/${encodeURIComponent(auth.uid)}`;
+async function pullRemote(){
+  try {
+    const j = await fbCall(docUrl(), { headers: { Authorization: 'Bearer ' + await idToken() } });
+    return { at: +j.fields.updatedAt.integerValue, payload: JSON.parse(j.fields.payload.stringValue) };
+  } catch(e){ if (e.status === 404) return null; throw e; }
+}
+async function pushRemote(){
+  const at = Date.now();
+  await fbCall(docUrl(), { method: 'PATCH', headers: { Authorization: 'Bearer ' + await idToken(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: { payload: { stringValue: JSON.stringify(snapshot()) }, updatedAt: { integerValue: String(at) } } }) });
+  syncSt.remoteAt = at;
+}
+async function syncNow(){
+  if (!syncOn() || !auth || syncing) return;
+  syncing = true; clearTimeout(pushT);
+  try {
+    const remote = await pullRemote();
+    if (remote && remote.at > (syncSt.remoteAt || 0)){ applyRemote(remote.payload, syncSt.dirty); syncSt.remoteAt = remote.at; if (!syncSt.dirty) render(); }
+    if (syncSt.dirty || !remote){ await pushRemote(); if (remote) render(); }
+    syncSt.dirty = false; syncSt.lastSync = Date.now(); syncSt.err = '';
+  } catch(e){
+    const c = String(e.message);
+    if (/INVALID_REFRESH_TOKEN|TOKEN_EXPIRED|USER_NOT_FOUND|USER_DISABLED|NO_AUTH|INVALID_ID_TOKEN/.test(c)){ auth = null; saveAuth(); syncSt.err = 'Session expirée : reconnecte-toi pour reprendre la sauvegarde.'; }
+    else syncSt.err = errMsg(e);
+  } finally {
+    syncing = false; saveSync();
+    if ($('v-set').classList.contains('on')) renderSync();
+    if ($('setup').classList.contains('on') && settings.setupDone) closeSetup();
+  }
+}
+
+/* Écran compte : se connecter / créer un compte / mot de passe oublié */
+let acMode = 'login';
+function openAcct(mode){
+  acMode = mode; const login = mode === 'login', signup = mode === 'signup', reset = mode === 'reset';
+  $('ac-title').textContent = login ? 'Me connecter' : signup ? 'Créer mon compte' : 'Mot de passe oublié';
+  $('ac-sub').textContent = login ? 'Connecte-toi pour retrouver tes horaires, astreintes et tarifs.'
+    : signup ? 'Tes données seront sauvegardées en ligne automatiquement, et récupérables sur un autre téléphone.'
+    : 'Tu vas recevoir un e-mail pour choisir un nouveau mot de passe.';
+  $('ac-pw-row').style.display = reset ? 'none' : '';
+  $('ac-pw2-row').style.display = signup ? '' : 'none';
+  $('ac-pw').autocomplete = signup ? 'new-password' : 'current-password';
+  $('ac-pw').value = ''; $('ac-pw2').value = ''; $('ac-err').textContent = ''; $('ac-err').className = 'note neg';
+  $('ac-go').textContent = login ? 'Me connecter' : signup ? 'Créer mon compte' : "Envoyer l'e-mail";
+  $('ac-switch').textContent = login ? 'Pas encore de compte ? Créer un compte' : 'J’ai déjà un compte : me connecter';
+  $('ac-forgot').style.display = login ? '' : 'none';
+  $('ac-hint').style.display = signup ? '' : 'none';
+  $('acct').classList.add('on'); document.body.classList.add('ov'); $('acct').scrollTop = 0;
+}
+function closeAcct(){ $('acct').classList.remove('on'); if (!$('setup').classList.contains('on')) document.body.classList.remove('ov'); }
+$('ac-close').onclick = closeAcct;
+$('ac-switch').onclick = () => openAcct(acMode === 'login' ? 'signup' : 'login');
+$('ac-forgot').onclick = () => openAcct('reset');
+$('ac-go').onclick = async () => {
+  const email = $('ac-mail').value.trim(), pw = $('ac-pw').value, btn = $('ac-go'), label = btn.textContent;
+  const fail = m => { $('ac-err').className = 'note neg'; $('ac-err').textContent = m; };
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("Indique une adresse e-mail valide.");
+  if (acMode !== 'reset' && !pw) return fail('Indique ton mot de passe.');
+  if (acMode === 'signup'){
+    if (pw.length < 8) return fail('Choisis un mot de passe d’au moins 8 caractères.');
+    if (pw !== $('ac-pw2').value) return fail('Les deux mots de passe sont différents.');
+  }
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    if (acMode === 'reset'){
+      await fbPost(IDT('sendOobCode'), { requestType: 'PASSWORD_RESET', email });
+      $('ac-err').className = 'note pos'; $('ac-err').textContent = `Si un compte existe pour ${email}, un e-mail vient d'être envoyé. Pense à regarder dans les spams.`;
+      return;
+    }
+    setAuth(await fbPost(IDT(acMode === 'signup' ? 'signUp' : 'signInWithPassword'), { email, password: pw, returnSecureToken: true }));
+    syncSt = { dirty: hasLocal() || !!settings.setupDone, remoteAt: 0, lastSync: 0, err: '' }; saveSync();
+    await syncNow();
+    if (syncSt.err) return fail(syncSt.err);
+    closeAcct();
+    if ($('setup').classList.contains('on') && !settings.setupDone){ toast('Connecté ✓ Termine tes réglages'); openSetup(); }
+    else toast(acMode === 'signup' ? 'Compte créé : sauvegarde en ligne activée ✓' : 'Connecté : données récupérées ✓');
+    render();
+  } catch(e){ fail(errMsg(e)); }
+  finally { btn.disabled = false; btn.textContent = label; }
+};
+
+/* Carte « Sauvegarde en ligne » dans Paramètres */
+function ago(t){
+  if (!t) return 'jamais'; const m = Math.round((Date.now() - t) / 60000);
+  return m < 1 ? "à l'instant" : m < 60 ? `il y a ${m} min` : new Date(t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+function renderSync(){
+  $('sync-sec').style.display = syncOn() ? '' : 'none';
+  if (!syncOn()) return;
+  const box = $('sync-card');
+  if (!auth){
+    box.innerHTML = `<div class="note" style="margin:0">Crée un compte (e-mail + mot de passe) : tes horaires, astreintes et tarifs sont alors sauvegardés en ligne automatiquement. Si tu perds ou changes de téléphone, il suffit de te reconnecter pour tout retrouver.</div>
+      ${syncSt.err ? `<div class="note neg">${esc(syncSt.err)}</div>` : ''}
+      <div class="actions"><button class="btn" id="sy-new">Créer un compte</button><button class="btn ghost" id="sy-in">Me connecter</button></div>`;
+    $('sy-new').onclick = () => openAcct('signup'); $('sy-in').onclick = () => openAcct('login');
+    return;
+  }
+  const st = syncing ? 'Synchronisation…' : syncSt.err ? `<span class="neg">${esc(syncSt.err)}</span>` : syncSt.dirty ? 'Envoi en attente…' : '<span class="pos">À jour ✓</span>';
+  box.innerHTML = `<div class="row"><span class="k">Compte</span><span class="v">${esc(auth.email)}</span></div>
+    <div class="row"><span class="k">Dernière synchro</span><span class="v">${ago(syncSt.lastSync)}</span></div>
+    <div class="row"><span class="k">État</span><span class="v">${st}</span></div>
+    <div class="actions"><button class="btn" id="sy-now">Synchroniser</button><button class="btn ghost" id="sy-out">Se déconnecter</button></div>
+    <button class="linkbtn" id="sy-del" style="color:var(--warn);margin-top:6px">Supprimer mon compte et mes données en ligne</button>`;
+  $('sy-now').onclick = async () => { syncSt.dirty = true; renderSync(); await syncNow(); toast(syncSt.err ? 'Synchronisation impossible' : 'Synchronisé ✓'); };
+  $('sy-out').onclick = () => {
+    if (!confirm('Se déconnecter ? Tes données restent sur ce téléphone, mais ne seront plus sauvegardées en ligne.')) return;
+    auth = null; saveAuth(); syncSt = { dirty: false, remoteAt: 0, lastSync: 0, err: '' }; saveSync(); renderSync(); toast('Déconnecté');
+  };
+  $('sy-del').onclick = async () => {
+    if (!confirm('Supprimer ton compte en ligne et la copie de tes données sur le serveur ?\n\nTes données restent sur ce téléphone.')) return;
+    if (!confirm('Dernière confirmation : supprimer définitivement le compte en ligne ?')) return;
+    try {
+      const tok = await idToken();
+      await fbCall(docUrl(), { method: 'DELETE', headers: { Authorization: 'Bearer ' + tok } });
+      await fbPost(IDT('delete'), { idToken: tok });
+      auth = null; saveAuth(); syncSt = { dirty: false, remoteAt: 0, lastSync: 0, err: '' }; saveSync(); renderSync(); toast('Compte en ligne supprimé');
+    } catch(e){ toast(errMsg(e)); }
+  };
+}
+window.addEventListener('online', () => { if (auth && syncSt.dirty) syncNow(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && auth && (syncSt.dirty || Date.now() - (syncSt.lastSync || 0) > 30000)) syncNow(); });
+
+/* ---------- Démarrage ---------- */
+function render(){
+  const v = document.querySelector('.view.on').id;
+  if (v === 'v-home') renderHome(); else if (v === 'v-hist') renderHist(); else if (v === 'v-stats') renderStats();
+  else if (v === 'v-astr') renderAstr(); else if (v === 'v-astrhist') renderAstrHist();
+  else if (v === 'v-wstat') renderWStat(); else if (v === 'v-dim') renderDim(); else renderSet();
+}
+render();
+if (!settings.setupDone) openSetup();
+if (auth) syncNow();
+setInterval(() => { const v = document.querySelector('.view.on').id; if (v === 'v-home' || v === 'v-astr' || v === 'v-dim') render(); }, 20000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden){ data = load(KEY, data); astr = load(AKEY, astr); dim = load(DKEY, dim); render(); } });
+if ('serviceWorker' in navigator && location.protocol === 'https:') { navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+</script>
+</body>
+</html>
